@@ -78,6 +78,12 @@ struct ContentView: View {
             }
         }
         .tint(Neon.cyan)
+        .onAppear {
+            if pairingStore.hasPairingFile {
+                pairingPath = pairingStore.pairingPath
+                pairingName = PairingStore.fileName
+            }
+        }
         .onChange(of: pairHost.phase) { _, phase in
             switch phase {
             case .advertising:
