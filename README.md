@@ -2,6 +2,12 @@
 
 iOS の位置情報シミュレーションを SwiftUI と GitHub Actions で検証する実験用リポジトリです。
 
+## リリース
+
+- **最新リリース:** [Location Lab v1.0.1](https://github.com/minecraftloveryesyesa-cmd/iOS-location-simulation/releases/tag/v1.0.1)
+- **IPA単体をダウンロード:** [LocationLab-v1.0.1.ipa](https://github.com/minecraftloveryesyesa-cmd/iOS-location-simulation/releases/download/v1.0.1/LocationLab-v1.0.1.ipa)
+- [すべてのリリースを見る](https://github.com/minecraftloveryesyesa-cmd/iOS-location-simulation/releases)
+
 ## ビルド成果物
 
 GitHub Actions の **Build versioned IPA** を手動実行し、バージョン番号（例: `1.0.1`）を指定してください。
