@@ -613,19 +613,16 @@ struct ContentView: View {
     private func importPairingFile(_ result: Result<[URL], Error>) {
         do {
             guard let source = try result.get().first else { return }
-            let accessed = source.startAccessingSecurityScopedResource()
-            defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-            let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let destination = directory.appendingPathComponent("RPPairing.data")
-            if FileManager.default.fileExists(atPath: destination.path) {
-                try FileManager.default.removeItem(at: destination)
-            }
-            try FileManager.default.copyItem(at: source, to: destination)
-            pairingPath = destination.path
-            pairingName = source.lastPathComponent
+            // Keep all imports in PairingStore's canonical Application Support location.
+            // The previous Documents copy made the UI and native pairing engine disagree
+            // about which pairing file was installed.
+            try pairingStore.importPairing(from: source)
+            pairingStore.refresh()
+            pairingPath = pairingStore.hasPairingFile ? pairingStore.pairingPath : nil
+            pairingName = pairingStore.hasPairingFile ? PairingStore.fileName : "未選択"
             errorMessage = nil
         } catch {
-            errorMessage = "ファイルを取り込めませんでした: \(error.localizedDescription)"
+            errorMessage = "ペアリングファイルを取り込めませんでした: \(error.localizedDescription)"
         }
     }
 
