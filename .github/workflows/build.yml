@@ -77,7 +77,9 @@ jobs:
         run: xcodegen generate
 
       - name: Build unsigned app
+        shell: bash
         run: |
+          set -o pipefail
           xcodebuild \
             -project LocationSimulationLab.xcodeproj \
             -scheme LocationSimulationLab \
@@ -88,7 +90,16 @@ jobs:
             CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            build 2>&1 | tee build.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LocationLab-build-log-${{ github.run_number }}
+          path: build.log
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Package standalone IPA file
         run: |
