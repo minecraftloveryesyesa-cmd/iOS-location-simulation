@@ -49,3 +49,8 @@ GitHub Actions の **Build versioned IPA** を手動実行し、バージョン�
 
 - [N3moStudio/Shift](https://github.com/N3moStudio/Shift)
 - [GitHub Actions workflow](.github/workflows/build.yml)
+
+
+## オンデバイス・ネットワークペアリング
+
+Pairing service and Bonjour relay are adapted from [N3moStudio/Shift](https://github.com/N3moStudio/Shift), distributed under the MIT License. This adds a native pairing listener, PIN callbacks, and local RPPairing-file storage. Real-device pairing remains unverified until the IPA is built and tested on the target iOS version.
