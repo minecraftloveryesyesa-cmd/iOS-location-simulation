@@ -1,17 +1,22 @@
 import SwiftUI
 import CoreLocation
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @State private var latitude = "35.681236"
     @State private var longitude = "139.767125"
+    @State private var deviceIP = "10.7.0.1"
+    @State private var pairingPath: String?
+    @State private var pairingName = "未選択"
+    @State private var showingImporter = false
+    @State private var isWorking = false
+    @State private var isActive = false
+    @State private var status = "未接続"
+    @State private var errorMessage: String?
 
     private var coordinate: CLLocationCoordinate2D? {
-        guard let lat = Double(latitude),
-              let lon = Double(longitude),
-              (-90...90).contains(lat),
-              (-180...180).contains(lon) else {
-            return nil
-        }
+        guard let lat = Double(latitude), let lon = Double(longitude),
+              (-90...90).contains(lat), (-180...180).contains(lon) else { return nil }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 
@@ -19,14 +24,8 @@ struct ContentView: View {
         NavigationStack {
             Form {
                 Section("座標") {
-                    TextField("緯度", text: $latitude)
-                        .keyboardType(.numbersAndPunctuation)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    TextField("経度", text: $longitude)
-                        .keyboardType(.numbersAndPunctuation)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                    TextField("緯度", text: $latitude).keyboardType(.numbersAndPunctuation)
+                    TextField("経度", text: $longitude).keyboardType(.numbersAndPunctuation)
                     if let coordinate {
                         LabeledContent("入力値") {
                             Text(String(format: "%.6f, %.6f", coordinate.latitude, coordinate.longitude))
@@ -38,21 +37,101 @@ struct ContentView: View {
                     }
                 }
 
-                Section("エンジン状態") {
-                    Label("未接続 — 研究用 UI のみ", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                    Text("この初期版は座標を検証・表示するだけです。iOS の位置情報は変更しません。")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                Section("接続設定") {
+                    TextField("トンネルIP", text: $deviceIP)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.numbersAndPunctuation)
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("RPPairingファイル")
+                            Text(pairingName).font(.footnote).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("選択") { showingImporter = true }
+                    }
+                    Text("ペアリングファイルは端末内のアプリ領域にコピーします。リポジトリやログには保存しません。")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
 
-                Section("次の検証") {
-                    Label("Shift の接続・セッション管理を分離", systemImage: "1.circle")
-                    Label("FFI ライブラリのリンク条件を確認", systemImage: "2.circle")
-                    Label("実機で開始・解除・他アプリへの反映を検証", systemImage: "3.circle")
+                Section("シミュレーション") {
+                    Label(status, systemImage: isActive ? "location.fill" : "location")
+                    Button(isWorking ? "処理中…" : "この座標を設定", systemImage: "location.fill") {
+                        Task { await setLocation() }
+                    }
+                    .disabled(isWorking || isActive || coordinate == nil || pairingPath == nil)
+                    Button(isWorking ? "処理中…" : "シミュレーションを解除", systemImage: "location.slash") {
+                        Task { await clearLocation() }
+                    }
+                    .disabled(isWorking || !isActive || pairingPath == nil)
+                    Text("接続先端末・開発用サービス・RPPairingファイルが必要です。成功は実機で別途確認してください。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+
+                if let errorMessage {
+                    Section("エラー") {
+                        Text(errorMessage).foregroundStyle(.red)
+                        Button("エラーを閉じる") { self.errorMessage = nil }
+                    }
                 }
             }
             .navigationTitle("Location Lab")
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.data], allowsMultipleSelection: false) { result in
+                importPairingFile(result)
+            }
+        }
+    }
+
+    private func importPairingFile(_ result: Result<[URL], Error>) {
+        do {
+            guard let source = try result.get().first else { return }
+            let accessed = source.startAccessingSecurityScopedResource()
+            defer { if accessed { source.stopAccessingSecurityScopedResource() } }
+            let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let destination = directory.appendingPathComponent("RPPairing.data")
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.copyItem(at: source, to: destination)
+            pairingPath = destination.path
+            pairingName = source.lastPathComponent
+            errorMessage = nil
+        } catch {
+            errorMessage = "ファイルを取り込めませんでした: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func setLocation() async {
+        guard let coordinate, let pairingPath else { return }
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+        do {
+            try await LocationEngine.set(latitude: coordinate.latitude, longitude: coordinate.longitude,
+                                         pairingPath: pairingPath, deviceIP: deviceIP.trimmingCharacters(in: .whitespacesAndNewlines))
+            isActive = true
+            status = "座標設定APIは成功"
+        } catch {
+            status = "設定失敗"
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func clearLocation() async {
+        guard let pairingPath else { return }
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+        do {
+            try await LocationEngine.clear(pairingPath: pairingPath,
+                                           deviceIP: deviceIP.trimmingCharacters(in: .whitespacesAndNewlines))
+            isActive = false
+            status = "解除APIは成功"
+        } catch {
+            status = "解除失敗"
+            errorMessage = error.localizedDescription
         }
     }
 }
