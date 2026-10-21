@@ -5,12 +5,12 @@ import UniformTypeIdentifiers
 import ActivityKit
 
 private enum Neon {
-    static let bg = Color(red: 0.018, green: 0.035, blue: 0.065)
-    static let panel = Color(red: 0.045, green: 0.075, blue: 0.12)
-    static let cyan = Color(red: 0.24, green: 0.66, blue: 0.76)
-    static let blue = Color(red: 0.12, green: 0.30, blue: 0.52)
-    static let muted = Color(red: 0.62, green: 0.76, blue: 0.86)
-    static let gradient = LinearGradient(colors: [cyan, blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let bg = Color(red: 0.025, green: 0.035, blue: 0.050)
+    static let panel = Color(red: 0.055, green: 0.070, blue: 0.090)
+    static let cyan = Color(red: 0.30, green: 0.53, blue: 0.61)
+    static let blue = Color(red: 0.10, green: 0.20, blue: 0.31)
+    static let muted = Color(red: 0.59, green: 0.66, blue: 0.72)
+    static let gradient = LinearGradient(colors: [Color(red: 0.20, green: 0.36, blue: 0.42), Color(red: 0.10, green: 0.19, blue: 0.29)], startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
 struct ContentView: View {
@@ -247,7 +247,7 @@ struct ContentView: View {
                         Image(systemName: "iphone.gen3")
                             .font(.system(size: 27)).foregroundStyle(Neon.cyan)
                             .frame(width: 50, height: 50)
-                            .background(Neon.cyan.opacity(0.10), in: RoundedRectangle(cornerRadius: 14))
+                            .background(Neon.cyan.opacity(0.055), in: RoundedRectangle(cornerRadius: 14))
                         VStack(alignment: .leading, spacing: 4) {
                             Text("ペアリングファイル")
                                 .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
@@ -270,7 +270,7 @@ struct ContentView: View {
                             .keyboardType(.numbersAndPunctuation)
                             .font(.system(size: 14, design: .monospaced)).foregroundStyle(.white)
                             .padding(13).background(Neon.bg, in: RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Neon.cyan.opacity(0.2), lineWidth: 1))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.075), lineWidth: 1))
                     }
                     Text("この画面で選んだペアリングファイルはアプリ内にコピーされます。")
                         .font(.footnote).foregroundStyle(Neon.muted)
@@ -312,7 +312,7 @@ struct ContentView: View {
             .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
             .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SoftPressButtonStyle())
     }
 
     private var header: some View {
@@ -334,12 +334,13 @@ struct ContentView: View {
                 Spacer()
                 Button { selectedPage = "pairing" } label: {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 52, height: 52)
-                        .background(.white.opacity(0.12), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Neon.muted)
+                        .frame(width: 44, height: 44)
+                        .background(Neon.panel, in: RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.08), lineWidth: 1))
                 }
+                .buttonStyle(SoftPressButtonStyle())
                 .accessibilityLabel("接続設定")
             }
             VStack(spacing: 7) {
@@ -373,7 +374,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Image(systemName: "mappin.and.ellipse")
-                    .font(.system(size: 24, weight: .medium)).foregroundStyle(Neon.blue)
+                    .font(.system(size: 21, weight: .medium)).foregroundStyle(Neon.cyan)
                 Text("場所を選択")
                     .font(.system(size: 23, weight: .bold)).foregroundStyle(.white)
             }
@@ -394,6 +395,7 @@ struct ContentView: View {
                         .frame(width: 58, height: 58)
                         .background(Color(red: 0.13, green: 0.16, blue: 0.22), in: RoundedRectangle(cornerRadius: 22))
                 }
+                .buttonStyle(SoftPressButtonStyle())
                 .accessibilityLabel("場所を検索")
             }
 
@@ -404,8 +406,7 @@ struct ContentView: View {
                             Image(systemName: "mappin.circle.fill")
                                 .font(.system(size: 42, weight: .medium))
                                 .symbolRenderingMode(.palette)
-                                .foregroundStyle(.white, Neon.blue)
-                                .shadow(color: Neon.blue.opacity(0.45), radius: 8)
+                                .foregroundStyle(.white, Color(red: 0.18, green: 0.31, blue: 0.40))
                         }
                     }
                 }
@@ -483,8 +484,8 @@ struct ContentView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Neon.cyan)
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(Neon.cyan.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Neon.cyan.opacity(0.25), lineWidth: 1))
+                        .background(Neon.cyan.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.09), lineWidth: 1))
                 }
                 .disabled(isWorking || pairingPath == nil)
             }
@@ -506,7 +507,7 @@ struct ContentView: View {
                     Image(systemName: showManualCoordinates ? "chevron.up" : "chevron.down")
                         .foregroundStyle(Neon.muted)
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(SoftPressButtonStyle())
             if showManualCoordinates {
                 coordinateField("LATITUDE / 緯度", value: $latitude)
                 coordinateField("LONGITUDE / 経度", value: $longitude)
@@ -518,7 +519,7 @@ struct ContentView: View {
             }
         }.padding(12)
             .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.075), lineWidth: 1))
     }
 
     private var connectionCard: some View {
@@ -533,7 +534,7 @@ struct ContentView: View {
                     Image(systemName: showConnectionSettings ? "chevron.up" : "chevron.down")
                         .foregroundStyle(Neon.muted)
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(SoftPressButtonStyle())
             if showConnectionSettings {
                 heading("03", "CONNECTION", "開発用サービスへの接続設定")
             VStack(alignment: .leading, spacing: 7) {
@@ -543,11 +544,11 @@ struct ContentView: View {
                     .keyboardType(.numbersAndPunctuation)
                     .font(.system(size: 14, design: .monospaced)).foregroundStyle(.white)
                     .padding(13).background(Neon.bg, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Neon.cyan.opacity(0.2), lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.075), lineWidth: 1))
             }
             HStack(spacing: 10) {
                 Image(systemName: "doc.badge.gearshape").font(.title2).foregroundStyle(Neon.cyan)
-                    .frame(width: 40, height: 40).background(Neon.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
+                    .frame(width: 40, height: 40).background(Neon.cyan.opacity(0.055), in: RoundedRectangle(cornerRadius: 11))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("RPPairing FILE").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(.white)
                     Text(pairingName).font(.caption).foregroundStyle(Neon.muted).lineLimit(1)
@@ -556,15 +557,15 @@ struct ContentView: View {
                 Button("選択") { showingImporter = true }
                     .font(.system(size: 12, weight: .bold)).foregroundStyle(Neon.cyan)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(Neon.cyan.opacity(0.1), in: Capsule())
-                    .overlay(Capsule().stroke(Neon.cyan.opacity(0.35), lineWidth: 1))
+                    .background(Neon.cyan.opacity(0.055), in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(0.10), lineWidth: 1))
             }
                 Text("ペアリングファイルは端末内のアプリ領域にコピーします。リポジトリやログには保存しません。")
                     .font(.footnote).foregroundStyle(Neon.muted)
             }
         }.padding(12)
             .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.075), lineWidth: 1))
     }
 
     private func heading(_ number: String, _ title: String, _ subtitle: String) -> some View {
@@ -589,7 +590,7 @@ struct ContentView: View {
                 .foregroundStyle(coordinate == nil ? .orange : Neon.cyan).lineLimit(1).minimumScaleFactor(0.75)
         }.frame(maxWidth: .infinity, alignment: .leading).padding(11)
             .background(Neon.bg, in: RoundedRectangle(cornerRadius: 11))
-            .overlay(RoundedRectangle(cornerRadius: 11).stroke(Neon.cyan.opacity(0.14), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 11).stroke(.white.opacity(0.06), lineWidth: 1))
     }
 
     private func fieldLabel(_ title: String) -> some View {
@@ -603,7 +604,7 @@ struct ContentView: View {
             TextField(title, text: value).keyboardType(.numbersAndPunctuation)
                 .font(.system(size: 14, design: .monospaced)).foregroundStyle(.white)
                 .padding(13).background(Neon.bg, in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Neon.cyan.opacity(0.2), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.075), lineWidth: 1))
         }
     }
 
@@ -676,7 +677,7 @@ private extension View {
     func cardStyle() -> some View {
         padding(14)
             .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 21))
-            .overlay(RoundedRectangle(cornerRadius: 21).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white.opacity(0.075), lineWidth: 1))
     }
 }
 
