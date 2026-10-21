@@ -209,7 +209,7 @@ struct ContentView: View {
                         .frame(width: 40, height: 40)
                         .background(.white.opacity(0.12), in: Circle())
                         .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
-                })
+                }
                 Spacer()
                 Button { selectedPage = "pairing" } label: {
                     Image(systemName: "gearshape")
