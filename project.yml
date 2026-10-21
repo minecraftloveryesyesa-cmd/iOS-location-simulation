@@ -11,6 +11,16 @@ targets:
     dependencies:
       - target: LocationLabLiveActivity
         embed: true
+    info:
+      properties:
+        NSLocalNetworkUsageDescription: "Location Lab uses the local network to pair this iPhone with Developer Mode."
+        NSLocationWhenInUseUsageDescription: "Location Lab uses location access to keep the pairing listener available while you complete pairing in Settings."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Location Lab needs background location access while you complete on-device pairing in Settings."
+        NSBonjourServices:
+          - _remotepairing-pairable-host._tcp
+        UIBackgroundModes:
+          - audio
+          - location
     sources:
       - path: Sources
       - path: Shared/PairingActivityAttributes.swift
