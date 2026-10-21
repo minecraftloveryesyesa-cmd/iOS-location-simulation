@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+    <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key><true/>
+    <key>CFBundleDisplayName</key><string>Location Lab</string>
+    <key>NSSupportsLiveActivities</key><true/>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Location Lab uses the local network to pair this iPhone with Developer Mode.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Location Lab uses location access to keep the pairing listener available while you complete pairing in Settings.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Location Lab needs background location access while you complete on-device pairing in Settings.</string>
+    <key>NSBonjourServices</key>
+    <array><string>_remotepairing-pairable-host._tcp</string></array>
+    <key>UIBackgroundModes</key>
+    <array><string>audio</string><string>location</string></array>
+    <key>UILaunchScreen</key><dict/>
+</dict>
+</plist>
