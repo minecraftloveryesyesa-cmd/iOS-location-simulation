@@ -19,6 +19,8 @@ struct ContentView: View {
     @State private var deviceIP = "10.7.0.1"
     @State private var pairingPath: String?
     @State private var pairingName = "未選択"
+    @StateObject private var pairingStore = PairingStore()
+    @StateObject private var pairHost = PairOnDeviceService()
     @State private var showingImporter = false
     @State private var isPairingActivityVisible = false
     @State private var isWorking = false
@@ -76,6 +78,25 @@ struct ContentView: View {
             }
         }
         .tint(Neon.cyan)
+        .onChange(of: pairHost.phase) { _, phase in
+            switch phase {
+            case .advertising:
+                PairingActivityManager.update(status: "ペアリング待機", detail: "iOSの設定からペアリングを開始")
+            case .deviceConnected:
+                PairingActivityManager.update(status: "接続済み", detail: "コードを生成しています")
+            case .awaitingPIN(let pin):
+                PairingActivityManager.update(status: "コード入力", detail: pin)
+            case .succeeded:
+                pairingStore.refresh()
+                pairingPath = pairingStore.pairingPath
+                pairingName = PairingStore.fileName
+                PairingActivityManager.update(status: "ペアリング完了", detail: "情報を保存しました")
+            case .failed(let message):
+                PairingActivityManager.update(status: "ペアリング失敗", detail: String(message.prefix(80)))
+            case .idle:
+                break
+            }
+        }
     }
 
     private var menuScreen: some View {
@@ -142,48 +163,75 @@ struct ContentView: View {
                     Text("iPhoneとの接続に使うペアリング情報を設定します")
                         .font(.subheadline).foregroundStyle(Neon.muted)
                 }
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("DYNAMIC ISLAND", systemImage: "livephoto")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .tracking(1).foregroundStyle(Neon.cyan)
-                    Text("ペアリングの進行状況をDynamic Islandに表示します。")
+                VStack(alignment: .leading, spacing: 14) {
+                    Label("このiPhoneとペアリング", systemImage: "iphone.gen3.radiowaves.left.and.right")
+                        .font(.system(size: 15, weight: .bold)).foregroundStyle(Neon.cyan)
+                    Text("開始後、設定 → プライバシーとセキュリティ → デベロッパモードからペアリングを行います。")
                         .font(.footnote).foregroundStyle(Neon.muted)
+                    VStack(spacing: 12) {
+                        switch pairHost.phase {
+                        case .idle:
+                            Label("開始待ち", systemImage: "circle.dashed").foregroundStyle(Neon.muted)
+                        case .advertising:
+                            ProgressView().tint(Neon.cyan)
+                            Text("設定アプリからの接続を待っています").font(.subheadline).foregroundStyle(.white)
+                            Text("このアプリを終了せずに設定へ移動してください。").font(.caption).foregroundStyle(Neon.muted)
+                        case .deviceConnected:
+                            ProgressView().tint(Neon.cyan)
+                            Text("接続しました。コードを準備しています").font(.subheadline).foregroundStyle(.white)
+                        case .awaitingPIN(let pin):
+                            Text("設定画面に入力するコード").font(.caption).foregroundStyle(Neon.muted)
+                            Text(pin).font(.system(size: 38, weight: .bold, design: .rounded))
+                                .tracking(7).monospacedDigit().foregroundStyle(Neon.cyan).textSelection(.enabled)
+                        case .succeeded:
+                            Label("ペアリング完了", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(Neon.cyan)
+                            Text("ペアリング情報をアプリ内に保存しました。").font(.caption).foregroundStyle(Neon.muted)
+                        case .failed(let message):
+                            Label("ペアリングに失敗しました", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                            Text(message).font(.caption).foregroundStyle(Neon.muted)
+                        }
+                    }
+                    .frame(maxWidth: .infinity).padding(15)
+                    .background(Neon.bg.opacity(0.9), in: RoundedRectangle(cornerRadius: 16))
                     HStack(spacing: 10) {
                         Button {
+                            pairHost.acknowledgeFailure()
+                            pairHost.start(pairingStore: pairingStore)
                             do {
-                                try PairingActivityManager.start()
+                                try PairingActivityManager.start(status: "ペアリング待機", detail: "iOSの設定からペアリングを開始")
                                 isPairingActivityVisible = true
-                                errorMessage = nil
                             } catch {
                                 errorMessage = "Live Activityを開始できませんでした: \(error.localizedDescription)"
                             }
                         } label: {
-                            Label("表示を開始", systemImage: "dot.radiowaves.left.and.right")
+                            Label("ペアリング開始", systemImage: "antenna.radiowaves.left.and.right")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(Neon.bg).frame(maxWidth: .infinity, minHeight: 46)
                                 .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 13))
                         }
                         .buttonStyle(.plain)
-                        .disabled(isPairingActivityVisible)
+                        .disabled(pairHost.isBusy || pairHost.phase == .succeeded)
                         Button {
+                            pairHost.resetToIdle()
                             PairingActivityManager.end()
                             isPairingActivityVisible = false
                         } label: {
-                            Label("終了", systemImage: "xmark")
+                            Label("停止", systemImage: "stop.fill")
                                 .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(.white).frame(minWidth: 72, minHeight: 46)
+                                .foregroundStyle(.white).frame(minWidth: 76, minHeight: 46)
                                 .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
                         }
                         .buttonStyle(.plain)
+                        .disabled(!pairHost.isBusy && pairHost.phase != .succeeded)
                     }
-                    Text("現在は状態表示のみです。実際のペアリングコードは取得していないため表示しません。")
+                    Label("Dynamic Islandには実際の状態と取得したコードを表示します。", systemImage: "livephoto")
                         .font(.system(size: 11)).foregroundStyle(Neon.muted.opacity(0.85))
                 }
                 .padding(15)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(Neon.cyan.opacity(0.24), lineWidth: 1))
                 .modifier(GlassCardFallback(cornerRadius: 20))
-                
+
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 12) {
                         Image(systemName: "iphone.gen3")
