@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 import CoreLocation
 import UniformTypeIdentifiers
 
@@ -13,6 +14,12 @@ struct ContentView: View {
     @State private var isActive = false
     @State private var status = "未接続"
     @State private var errorMessage: String?
+    @State private var mapPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
+            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08)
+        )
+    )
 
     private var coordinate: CLLocationCoordinate2D? {
         guard let lat = Double(latitude), let lon = Double(longitude),
@@ -23,15 +30,39 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("地図から選択") {
+                    MapReader { proxy in
+                        Map(position: $mapPosition) {
+                            if let coordinate {
+                                Marker("選択した地点", coordinate: coordinate)
+                                    .tint(.blue)
+                            }
+                        }
+                        .mapStyle(.standard(elevation: .flat))
+                        .frame(height: 300)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .onTapGesture { point in
+                            guard let selected = proxy.convert(point, from: .local) else { return }
+                            latitude = String(format: "%.6f", selected.latitude)
+                            longitude = String(format: "%.6f", selected.longitude)
+                        }
+                    }
+                    Text("地図をタップすると、その地点の座標が下の入力欄に反映されます。地図はドラッグ・拡大縮小できます。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    if let coordinate {
+                        LabeledContent("選択地点") {
+                            Text(String(format: "%.6f, %.6f", coordinate.latitude, coordinate.longitude))
+                                .monospacedDigit()
+                                .font(.footnote)
+                        }
+                    }
+                }
+
                 Section("座標") {
                     TextField("緯度", text: $latitude).keyboardType(.numbersAndPunctuation)
                     TextField("経度", text: $longitude).keyboardType(.numbersAndPunctuation)
-                    if let coordinate {
-                        LabeledContent("入力値") {
-                            Text(String(format: "%.6f, %.6f", coordinate.latitude, coordinate.longitude))
-                                .monospacedDigit()
-                        }
-                    } else {
+                    if coordinate == nil {
                         Text("緯度は -90〜90、経度は -180〜180 で入力してください。")
                             .foregroundStyle(.red)
                     }
@@ -64,7 +95,7 @@ struct ContentView: View {
                         Task { await clearLocation() }
                     }
                     .disabled(isWorking || !isActive || pairingPath == nil)
-                    Text("接続先端末・開発用サービス・RPPairingファイルが必要です。成功は実機で別途確認してください。")
+                    Text("接続先端末・開発用サービス・RPPairingファイルが必要です。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
 
