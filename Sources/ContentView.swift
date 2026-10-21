@@ -2,6 +2,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 import UniformTypeIdentifiers
+import ActivityKit
 
 private enum Neon {
     static let bg = Color(red: 0.018, green: 0.035, blue: 0.065)
@@ -19,6 +20,7 @@ struct ContentView: View {
     @State private var pairingPath: String?
     @State private var pairingName = "未選択"
     @State private var showingImporter = false
+    @State private var isPairingActivityVisible = false
     @State private var isWorking = false
     @State private var isActive = false
     @State private var status = "未接続"
@@ -126,6 +128,48 @@ struct ContentView: View {
                     Text("iPhoneとの接続に使うペアリング情報を設定します")
                         .font(.subheadline).foregroundStyle(Neon.muted)
                 }
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("DYNAMIC ISLAND", systemImage: "livephoto")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .tracking(1).foregroundStyle(Neon.cyan)
+                    Text("ペアリングの進行状況をDynamic Islandに表示します。")
+                        .font(.footnote).foregroundStyle(Neon.muted)
+                    HStack(spacing: 10) {
+                        Button {
+                            do {
+                                try PairingActivityManager.start()
+                                isPairingActivityVisible = true
+                                errorMessage = nil
+                            } catch {
+                                errorMessage = "Live Activityを開始できませんでした: \\(error.localizedDescription)"
+                            }
+                        } label: {
+                            Label("表示を開始", systemImage: "dot.radiowaves.left.and.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Neon.bg).frame(maxWidth: .infinity, minHeight: 46)
+                                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 13))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isPairingActivityVisible)
+                        Button {
+                            PairingActivityManager.end()
+                            isPairingActivityVisible = false
+                        } label: {
+                            Label("終了", systemImage: "xmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.white).frame(minWidth: 72, minHeight: 46)
+                                .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Text("現在は状態表示のみです。実際のペアリングコードは取得していないため表示しません。")
+                        .font(.system(size: 11)).foregroundStyle(Neon.muted.opacity(0.85))
+                }
+                .padding(15)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(Neon.cyan.opacity(0.24), lineWidth: 1))
+                .modifier(GlassCardFallback(cornerRadius: 20))
+                
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 12) {
                         Image(systemName: "iphone.gen3")
