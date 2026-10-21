@@ -23,6 +23,7 @@ struct ContentView: View {
     @State private var isActive = false
     @State private var status = "未接続"
     @State private var errorMessage: String?
+    @State private var searchQuery = ""
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
                            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08))
@@ -64,120 +65,176 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "location.north.circle.fill")
-                .font(.system(size: 27, weight: .semibold)).foregroundStyle(Neon.bg)
-                .frame(width: 49, height: 49).background(Neon.gradient, in: RoundedRectangle(cornerRadius: 15))
-            VStack(alignment: .leading, spacing: 3) {
-                Text("LOCATION LAB").font(.system(size: 22, weight: .black, design: .rounded))
-                    .tracking(1.2).foregroundStyle(.white)
-                Text("LOCATION SIMULATION").font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .tracking(1.2).foregroundStyle(Neon.cyan)
+        VStack(spacing: 16) {
+            HStack {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(.white.opacity(0.12), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
+                Spacer()
+                Button { showingImporter = true } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 52, height: 52)
+                        .background(.white.opacity(0.12), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
+                }
+                .accessibilityLabel("接続設定")
             }
-            Spacer(minLength: 0)
-            HStack(spacing: 5) {
-                Circle().fill(isActive ? Neon.cyan : Neon.muted.opacity(0.5)).frame(width: 7, height: 7)
-                Text(isActive ? "ACTIVE" : "STANDBY")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .foregroundStyle(isActive ? Neon.cyan : Neon.muted)
-            }.padding(.horizontal, 9).padding(.vertical, 8)
-                .background(Neon.panel, in: Capsule())
-                .overlay(Capsule().stroke(Neon.cyan.opacity(0.25), lineWidth: 1))
+            VStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(Neon.bg)
+                        .frame(width: 112, height: 112)
+                        .overlay(RoundedRectangle(cornerRadius: 28).stroke(Neon.blue.opacity(0.65), lineWidth: 1))
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 48, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+                Text("位置情報の偽装")
+                    .font(.system(size: 31, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                HStack(spacing: 9) {
+                    Image(systemName: isActive ? "location.fill" : "location.slash.fill")
+                        .foregroundStyle(isActive ? Neon.cyan : Color.orange)
+                    Text(isActive ? "偽装しています" : "偽装していません")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(isActive ? Neon.cyan : Color.orange)
+                }
+                .padding(.horizontal, 20).padding(.vertical, 11)
+                .background(Color(red: 0.12, green: 0.15, blue: 0.21), in: Capsule())
+                .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 1))
+            }
+            .padding(.top, 3).padding(.bottom, 8)
         }
     }
 
     private var mapCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            heading("01", "MAP SELECTOR", "地図をタップして地点を選択")
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.system(size: 24, weight: .medium)).foregroundStyle(Neon.blue)
+                Text("場所を選択")
+                    .font(.system(size: 23, weight: .bold)).foregroundStyle(.white)
+            }
+
+            HStack(spacing: 10) {
+                TextField("場所を検索", text: $searchQuery)
+                    .font(.system(size: 17))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .frame(height: 58)
+                    .background(Color(red: 0.10, green: 0.12, blue: 0.17), in: RoundedRectangle(cornerRadius: 20))
+                    .submitLabel(.search)
+                    .onSubmit { Task { await searchPlace() } }
+                Button { Task { await searchPlace() } } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 21, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 58, height: 58)
+                        .background(Color(red: 0.13, green: 0.16, blue: 0.22), in: RoundedRectangle(cornerRadius: 22))
+                }
+                .accessibilityLabel("場所を検索")
+            }
+
             MapReader { proxy in
                 Map(position: $mapPosition) {
                     if let coordinate {
-                        Annotation("TARGET", coordinate: coordinate, anchor: .bottom) {
-                            VStack(spacing: 3) {
-                                Image(systemName: "scope").font(.system(size: 25, weight: .bold))
-                                    .foregroundStyle(Neon.cyan).shadow(color: Neon.cyan.opacity(0.9), radius: 8)
-                                Text("TARGET").font(.system(size: 8, weight: .black, design: .monospaced))
-                                    .tracking(1).foregroundStyle(.white)
-                                    .padding(.horizontal, 6).padding(.vertical, 3)
-                                    .background(Color.black.opacity(0.85), in: Capsule())
-                            }
+                        Annotation("選択地点", coordinate: coordinate, anchor: .bottom) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.system(size: 42, weight: .medium))
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, Neon.blue)
+                                .shadow(color: Neon.blue.opacity(0.45), radius: 8)
                         }
                     }
                 }
-                .mapStyle(.standard(elevation: .flat, emphasis: .muted))
-                .frame(height: 285).clipShape(RoundedRectangle(cornerRadius: 15))
-                .overlay(RoundedRectangle(cornerRadius: 15).stroke(Neon.cyan.opacity(0.45), lineWidth: 1))
+                .mapStyle(.standard(elevation: .flat))
+                .frame(height: 360)
+                .clipShape(RoundedRectangle(cornerRadius: 24))
                 .onTapGesture { point in
                     guard let selected = proxy.convert(point, from: .local) else { return }
                     latitude = String(format: "%.6f", selected.latitude)
                     longitude = String(format: "%.6f", selected.longitude)
                 }
             }
-            HStack {
-                Label("MAP TAP TO SET TARGET", systemImage: "scope")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .tracking(0.5).foregroundStyle(Neon.muted)
-                Spacer()
-                Text("WGS84").font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .foregroundStyle(Neon.cyan).padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(Neon.cyan.opacity(0.1), in: Capsule())
+
+            HStack(spacing: 10) {
+                Image(systemName: "scope").foregroundStyle(Neon.muted)
+                Text(coordinate.map { String(format: "%.5f,  %.5f", $0.latitude, $0.longitude) } ?? "座標を選択してください")
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Neon.muted)
+                    .lineLimit(1).minimumScaleFactor(0.75)
             }
-        }.cardStyle()
+        }
+        .padding(18)
+        .background(Neon.panel.opacity(0.62), in: RoundedRectangle(cornerRadius: 28))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.30), lineWidth: 1))
+    }
+
+    @MainActor
+    private func searchPlace() async {
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = query
+        do {
+            let response = try await MKLocalSearch(request: request).start()
+            guard let item = response.mapItems.first else {
+                errorMessage = "場所が見つかりませんでした。別の検索語を試してください。"
+                return
+            }
+            let target = item.placemark.coordinate
+            latitude = String(format: "%.6f", target.latitude)
+            longitude = String(format: "%.6f", target.longitude)
+            mapPosition = .region(MKCoordinateRegion(
+                center: target,
+                span: MKCoordinateSpan(latitudeDelta: 0.025, longitudeDelta: 0.025)
+            ))
+            errorMessage = nil
+        } catch {
+            errorMessage = "場所を検索できませんでした: \\(error.localizedDescription)"
+        }
     }
 
     private var actionCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: isActive ? "checkmark.circle.fill" : "location.circle.fill")
-                    .font(.title3).foregroundStyle(Neon.cyan)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(isActive ? "SIMULATION ACTIVE" : "TARGET COORDINATES")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .tracking(0.5).foregroundStyle(.white)
-                    Text(status).font(.caption).foregroundStyle(Neon.muted)
-                }
-                Spacer()
-                if isWorking { ProgressView().tint(Neon.cyan) }
-            }
-            HStack(spacing: 8) {
-                coordinateValue("LATITUDE", coordinate.map { String(format: "%.6f", $0.latitude) } ?? "INVALID")
-                coordinateValue("LONGITUDE", coordinate.map { String(format: "%.6f", $0.longitude) } ?? "INVALID")
-            }
+        VStack(spacing: 12) {
             Button { Task { await setLocation() } } label: {
-                HStack {
-                    Image(systemName: "location.fill")
-                    Text(isWorking ? "処理中…" : "位置情報を設定")
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
+                HStack(spacing: 10) {
+                    if isWorking { ProgressView().tint(.white) }
+                    else { Image(systemName: "location.fill") }
+                    Text(isWorking ? "設定中" : "位置情報を設定")
+                        .font(.system(size: 19, weight: .bold))
                 }
-                .font(.system(size: 15, weight: .bold)).foregroundStyle(Neon.bg)
-                .padding(.horizontal, 16).frame(maxWidth: .infinity, minHeight: 53)
-                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 14))
-                .shadow(color: Neon.blue.opacity(0.25), radius: 12, y: 4)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 72)
+                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 24))
+                .shadow(color: Neon.blue.opacity(0.32), radius: 16, y: 6)
             }
             .buttonStyle(.plain)
             .disabled(isWorking || isActive || coordinate == nil || pairingPath == nil)
-            .opacity(isWorking || isActive || coordinate == nil || pairingPath == nil ? 0.45 : 1)
+            .opacity(isWorking || isActive || coordinate == nil || pairingPath == nil ? 0.5 : 1)
 
-            Button { Task { await clearLocation() } } label: {
-                HStack {
-                    Image(systemName: "location.slash")
-                    Text(isWorking ? "処理中…" : "シミュレーションを解除")
-                    Spacer()
-                    Image(systemName: "xmark")
+            if isActive {
+                Button { Task { await clearLocation() } } label: {
+                    Label("シミュレーションを解除", systemImage: "location.slash")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Neon.cyan)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(Neon.cyan.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Neon.cyan.opacity(0.25), lineWidth: 1))
                 }
-                .font(.system(size: 13, weight: .semibold)).foregroundStyle(isActive ? Neon.cyan : Neon.muted)
-                .padding(.horizontal, 15).frame(maxWidth: .infinity, minHeight: 45)
-                .background(Neon.cyan.opacity(0.06), in: RoundedRectangle(cornerRadius: 13))
-                .overlay(RoundedRectangle(cornerRadius: 13).stroke(Neon.cyan.opacity(0.25), lineWidth: 1))
+                .disabled(isWorking || pairingPath == nil)
             }
-            .buttonStyle(.plain).disabled(isWorking || !isActive || pairingPath == nil)
-            .opacity(isWorking || !isActive || pairingPath == nil ? 0.45 : 1)
+            if !isActive {
+                Text(pairingPath == nil ? "接続設定からRPPairingファイルを選択してください" : status)
+                    .font(.caption).foregroundStyle(Neon.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .padding(15)
-        .background(LinearGradient(colors: [Neon.panel, Neon.bg], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: RoundedRectangle(cornerRadius: 21))
-        .overlay(RoundedRectangle(cornerRadius: 21).stroke(Neon.cyan.opacity(0.3), lineWidth: 1))
     }
 
     private var coordinatesCard: some View {
