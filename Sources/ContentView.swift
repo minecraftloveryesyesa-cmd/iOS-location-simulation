@@ -234,9 +234,8 @@ struct ContentView: View {
                         .font(.system(size: 11)).foregroundStyle(Neon.muted.opacity(0.85))
                 }
                 .padding(15)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
-                .overlay(RoundedRectangle(cornerRadius: 20).stroke(Neon.cyan.opacity(0.24), lineWidth: 1))
-                .modifier(GlassCardFallback(cornerRadius: 20))
+                .background(Neon.panel, in: RoundedRectangle(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(.white.opacity(0.08), lineWidth: 1))
 
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 12) {
@@ -272,9 +271,8 @@ struct ContentView: View {
                         .font(.footnote).foregroundStyle(Neon.muted)
                 }
                 .padding(16)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
-                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.22), lineWidth: 1))
-                .modifier(GlassCardFallback(cornerRadius: 22))
+                .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
                 if let errorMessage { errorCard(errorMessage) }
             }
             .padding(16)
@@ -289,7 +287,6 @@ struct ContentView: View {
                     .foregroundStyle(.white)
                     .frame(width: 66, height: 66)
                     .background(Neon.bg, in: RoundedRectangle(cornerRadius: 18))
-                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Neon.blue.opacity(0.45), lineWidth: 1))
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 8) {
                         Text(title).font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
@@ -307,9 +304,8 @@ struct ContentView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 25))
-            .overlay(RoundedRectangle(cornerRadius: 25).stroke(.white.opacity(0.20), lineWidth: 1))
-            .modifier(GlassCardFallback(cornerRadius: 25))
+            .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
+            .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -341,7 +337,6 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 22)
                         .fill(Neon.bg)
                         .frame(width: 64, height: 64)
-                        .overlay(RoundedRectangle(cornerRadius: 28).stroke(Neon.blue.opacity(0.65), lineWidth: 1))
                     Image(systemName: "mappin.and.ellipse")
                         .font(.system(size: 30, weight: .medium))
                         .foregroundStyle(.white)
@@ -423,9 +418,8 @@ struct ContentView: View {
             }
         }
         .padding(11)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.22), lineWidth: 1))
-        .modifier(GlassCardFallback(cornerRadius: 22))
+        .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
     }
 
     @MainActor
@@ -465,7 +459,6 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: 54)
                 .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Neon.blue.opacity(0.28), radius: 12, y: 4)
                 .scaleEffect(isWorking ? 0.985 : 1)
                 .animation(.spring(response: 0.25, dampingFraction: 0.62), value: isWorking)
             }
@@ -673,19 +666,5 @@ private extension View {
         padding(14)
             .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 21))
             .overlay(RoundedRectangle(cornerRadius: 21).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
-    }
-}
-
- 
-private struct GlassCardFallback: ViewModifier {
-    let cornerRadius: CGFloat
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
-        } else {
-            content
-        }
     }
 }
