@@ -141,7 +141,7 @@ struct ContentView: View {
                                 isPairingActivityVisible = true
                                 errorMessage = nil
                             } catch {
-                                errorMessage = "Live Activityを開始できませんでした: \\(error.localizedDescription)"
+                                errorMessage = "Live Activityを開始できませんでした: \(error.localizedDescription)"
                             }
                         } label: {
                             Label("表示を開始", systemImage: "dot.radiowaves.left.and.right")
