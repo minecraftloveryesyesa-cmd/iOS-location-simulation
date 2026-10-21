@@ -592,7 +592,7 @@ struct ContentView: View {
         guard parts.count == 4 else { return false }
         return parts.allSatisfy { part in
             guard !part.isEmpty, let number = Int(part), (0...255).contains(number) else { return false }
-            return String(number) == part || (part.first == "0" && part.allSatisfy(\.isNumber))
+            return String(number) == String(part)
         }
     }
 
@@ -781,6 +781,7 @@ struct ContentView: View {
         } catch {
             status = "設定失敗"
             errorMessage = error.localizedDescription
+            PairingActivityManager.update(status: "位置情報設定失敗", detail: String(error.localizedDescription.prefix(80)))
         }
     }
 
@@ -799,6 +800,7 @@ struct ContentView: View {
         } catch {
             status = "解除失敗"
             errorMessage = error.localizedDescription
+            PairingActivityManager.update(status: "シミュレーション解除失敗", detail: String(error.localizedDescription.prefix(80)))
         }
     }
 }
