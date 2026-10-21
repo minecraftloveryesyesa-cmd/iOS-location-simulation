@@ -37,11 +37,15 @@ jobs:
           else
             VERSION="${{ inputs.version || '1.0.1' }}"
           fi
+          # Accept both X.Y and X.Y.Z; normalize X.Y to X.Y.0.
+          if [[ "$VERSION" =~ ^([0-9]+\.[0-9]+)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}.0"
+          fi
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid version: $VERSION"
+            echo "Invalid version: $VERSION (use X.Y or X.Y.Z, e.g. 2.0 or 2.0.0)"
             exit 1
           fi
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+                    echo "value=$VERSION" >> "$GITHUB_OUTPUT"
           echo "ipa_name=LocationLab-v$VERSION.ipa" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Shift dependency
