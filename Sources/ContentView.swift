@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var searchQuery = ""
     @State private var showManualCoordinates = false
     @State private var showConnectionSettings = false
+    @State private var selectedPage = "menu"
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
                            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08))
@@ -41,20 +42,14 @@ struct ContentView: View {
         NavigationStack {
             ZStack {
                 Neon.bg.ignoresSafeArea()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        header
-                        mapCard
-                        actionCard // 設定・解除ボタンはマップ直下
-                        coordinatesCard
-                        connectionCard
-                        if let errorMessage { errorCard(errorMessage) }
-                        Text("LOCATION LAB  •  DEVELOPMENT INTERFACE")
-                            .font(.system(size: 9, weight: .medium, design: .monospaced))
-                            .tracking(1.4).foregroundStyle(Neon.muted.opacity(0.65))
-                            .frame(maxWidth: .infinity).padding(.top, 4)
+                Group {
+                    if selectedPage == "menu" {
+                        menuScreen
+                    } else if selectedPage == "pairing" {
+                        pairingScreen
+                    } else {
+                        locationScreen
                     }
-                    .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 14)
                 }
             }
             .preferredColorScheme(.dark)
@@ -66,17 +61,157 @@ struct ContentView: View {
         .tint(Neon.cyan)
     }
 
+    private var menuScreen: some View {
+        ScrollView {
+            VStack(spacing: 22) {
+                Text("ツール")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.top, 12)
+
+                VStack(spacing: 14) {
+                    menuRow(icon: "iphone.gen3.radiowaves.left.and.right", title: "ペアリング",
+                            subtitle: pairingPath == nil ? "iPhoneとの接続設定" : "ペアリングファイル設定済み",
+                            badge: nil) {
+                        selectedPage = "pairing"
+                    }
+                    menuRow(icon: "mappin.and.ellipse", title: "位置情報の偽装",
+                            subtitle: isActive ? "偽装しています" : "地図から場所を選択",
+                            badge: nil) {
+                        selectedPage = "location"
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
+        }
+    }
+
+    private var locationScreen: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                header
+                mapCard
+                actionCard
+                coordinatesCard
+                if let errorMessage { errorCard(errorMessage) }
+                Text("LOCATION LAB  •  DEVELOPMENT INTERFACE")
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .tracking(1.4).foregroundStyle(Neon.muted.opacity(0.65))
+                    .frame(maxWidth: .infinity).padding(.top, 4)
+            }
+            .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 14)
+        }
+    }
+
+    private var pairingScreen: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    Button { selectedPage = "menu" } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.white)
+                            .frame(width: 42, height: 42)
+                            .background(.white.opacity(0.10), in: Circle())
+                            .overlay(Circle().stroke(.white.opacity(0.25), lineWidth: 1))
+                    }
+                    Spacer()
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ペアリング")
+                        .font(.system(size: 29, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text("iPhoneとの接続に使うペアリング情報を設定します")
+                        .font(.subheadline).foregroundStyle(Neon.muted)
+                }
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "iphone.gen3")
+                            .font(.system(size: 27)).foregroundStyle(Neon.cyan)
+                            .frame(width: 50, height: 50)
+                            .background(Neon.cyan.opacity(0.10), in: RoundedRectangle(cornerRadius: 14))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("ペアリングファイル")
+                                .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                            Text(pairingPath == nil ? "未設定" : pairingName)
+                                .font(.caption).foregroundStyle(Neon.muted).lineLimit(2)
+                        }
+                        Spacer()
+                    }
+                    Button { showingImporter = true } label: {
+                        Label(pairingPath == nil ? "ファイルを選択" : "ファイルを変更", systemImage: "folder")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Neon.bg)
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 15))
+                    }.buttonStyle(.plain)
+                    VStack(alignment: .leading, spacing: 7) {
+                        fieldLabel("TUNNEL IP")
+                        TextField("10.7.0.1", text: $deviceIP)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            .keyboardType(.numbersAndPunctuation)
+                            .font(.system(size: 14, design: .monospaced)).foregroundStyle(.white)
+                            .padding(13).background(Neon.bg, in: RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Neon.cyan.opacity(0.2), lineWidth: 1))
+                    }
+                    Text("この画面で選んだペアリングファイルはアプリ内にコピーされます。")
+                        .font(.footnote).foregroundStyle(Neon.muted)
+                }
+                .padding(16)
+                .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Neon.cyan.opacity(0.22), lineWidth: 1))
+                if let errorMessage { errorCard(errorMessage) }
+            }
+            .padding(16)
+        }
+    }
+
+    private func menuRow(icon: String, title: String, subtitle: String, badge: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 17) {
+                Image(systemName: icon)
+                    .font(.system(size: 29, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 66, height: 66)
+                    .background(Neon.bg, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Neon.blue.opacity(0.45), lineWidth: 1))
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 8) {
+                        Text(title).font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
+                        if let badge {
+                            Text(badge).font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Neon.cyan).padding(.horizontal, 9).padding(.vertical, 5)
+                                .background(Neon.blue.opacity(0.18), in: Capsule())
+                        }
+                    }
+                    Text(subtitle).font(.caption).foregroundStyle(Neon.muted)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(.white.opacity(0.42))
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+            .background(Neon.panel.opacity(0.45), in: RoundedRectangle(cornerRadius: 25))
+            .overlay(RoundedRectangle(cornerRadius: 25).stroke(.white.opacity(0.27), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var header: some View {
         VStack(spacing: 7) {
             HStack {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 40, height: 40)
-                    .background(.white.opacity(0.12), in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
+                Button { selectedPage = "menu" } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(.white.opacity(0.12), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
+                })
                 Spacer()
-                Button { showingImporter = true } label: {
+                Button { selectedPage = "pairing" } label: {
                     Image(systemName: "gearshape")
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(.white)
