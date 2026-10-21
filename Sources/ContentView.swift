@@ -394,7 +394,7 @@ struct ContentView: View {
                         .foregroundStyle(.white)
                         .frame(width: 58, height: 58)
                         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
-                        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.10), lineWidth: 1)
+                        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.10), lineWidth: 1))
                 }
                 .buttonStyle(SoftPressButtonStyle())
                 .accessibilityLabel("場所を検索")
