@@ -54,6 +54,20 @@ struct ContentView: View {
                     }
                 }
                 .animation(.spring(response: 0.38, dampingFraction: 0.86), value: selectedPage)
+                // iOS-style edge swipe: start near the left edge and drag right to go back.
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 18, coordinateSpace: .local)
+                        .onEnded { value in
+                            guard value.startLocation.x < 34,
+                                  value.translation.width > 90,
+                                  abs(value.translation.height) < 90,
+                                  selectedPage != "menu" else { return }
+                            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                selectedPage = "menu"
+                            }
+                        }
+                )
             }
             .preferredColorScheme(.dark)
             .toolbar(.hidden, for: .navigationBar)
