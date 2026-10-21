@@ -44,13 +44,14 @@ struct ContentView: View {
                 Neon.bg.ignoresSafeArea()
                 Group {
                     if selectedPage == "menu" {
-                        menuScreen
+                        menuScreen.transition(.opacity.combined(with: .scale(scale: 0.97)))
                     } else if selectedPage == "pairing" {
-                        pairingScreen
+                        pairingScreen.transition(.move(edge: .trailing).combined(with: .opacity))
                     } else {
-                        locationScreen
+                        locationScreen.transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
+                .animation(.spring(response: 0.38, dampingFraction: 0.86), value: selectedPage)
             }
             .preferredColorScheme(.dark)
             .toolbar(.hidden, for: .navigationBar)
@@ -159,8 +160,9 @@ struct ContentView: View {
                         .font(.footnote).foregroundStyle(Neon.muted)
                 }
                 .padding(16)
-                .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
-                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Neon.cyan.opacity(0.22), lineWidth: 1))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.22), lineWidth: 1))
+                .modifier(GlassCardFallback(cornerRadius: 22))
                 if let errorMessage { errorCard(errorMessage) }
             }
             .padding(16)
@@ -193,8 +195,9 @@ struct ContentView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
-            .background(Neon.panel.opacity(0.45), in: RoundedRectangle(cornerRadius: 25))
-            .overlay(RoundedRectangle(cornerRadius: 25).stroke(.white.opacity(0.27), lineWidth: 1))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 25))
+            .overlay(RoundedRectangle(cornerRadius: 25).stroke(.white.opacity(0.20), lineWidth: 1))
+            .modifier(GlassCardFallback(cornerRadius: 25))
         }
         .buttonStyle(.plain)
     }
@@ -308,8 +311,9 @@ struct ContentView: View {
             }
         }
         .padding(11)
-        .background(Neon.panel.opacity(0.62), in: RoundedRectangle(cornerRadius: 28))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.30), lineWidth: 1))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.22), lineWidth: 1))
+        .modifier(GlassCardFallback(cornerRadius: 22))
     }
 
     @MainActor
@@ -348,8 +352,10 @@ struct ContentView: View {
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: 54)
-                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 24))
-                .shadow(color: Neon.blue.opacity(0.32), radius: 16, y: 6)
+                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Neon.blue.opacity(0.28), radius: 12, y: 4)
+                .scaleEffect(isWorking ? 0.985 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.62), value: isWorking)
             }
             .buttonStyle(.plain)
             .disabled(isWorking || isActive || coordinate == nil || pairingPath == nil)
@@ -555,5 +561,19 @@ private extension View {
         padding(14)
             .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 21))
             .overlay(RoundedRectangle(cornerRadius: 21).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
+    }
+}
+
+ 
+private struct GlassCardFallback: ViewModifier {
+    let cornerRadius: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
+        } else {
+            content
+        }
     }
 }
