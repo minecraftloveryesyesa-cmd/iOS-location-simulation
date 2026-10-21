@@ -73,7 +73,7 @@ struct ContentView: View {
             }
             .preferredColorScheme(.dark)
             .toolbar(.hidden, for: .navigationBar)
-            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.data], allowsMultipleSelection: false) {
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: PairingStore.supportedTypes, allowsMultipleSelection: false) {
                 importPairingFile($0)
             }
         }
