@@ -24,6 +24,8 @@ struct ContentView: View {
     @State private var status = "未接続"
     @State private var errorMessage: String?
     @State private var searchQuery = ""
+    @State private var showManualCoordinates = false
+    @State private var showConnectionSettings = false
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
                            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08))
@@ -40,7 +42,7 @@ struct ContentView: View {
             ZStack {
                 Neon.bg.ignoresSafeArea()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 17) {
+                    VStack(alignment: .leading, spacing: 10) {
                         header
                         mapCard
                         actionCard // 設定・解除ボタンはマップ直下
@@ -52,7 +54,7 @@ struct ContentView: View {
                             .tracking(1.4).foregroundStyle(Neon.muted.opacity(0.65))
                             .frame(maxWidth: .infinity).padding(.top, 4)
                     }
-                    .padding(.horizontal, 15).padding(.top, 12).padding(.bottom, 28)
+                    .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 14)
                 }
             }
             .preferredColorScheme(.dark)
@@ -65,12 +67,12 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 7) {
             HStack {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
+                    .frame(width: 40, height: 40)
                     .background(.white.opacity(0.12), in: Circle())
                     .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
                 Spacer()
@@ -84,18 +86,18 @@ struct ContentView: View {
                 }
                 .accessibilityLabel("接続設定")
             }
-            VStack(spacing: 14) {
+            VStack(spacing: 7) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 28)
+                    RoundedRectangle(cornerRadius: 22)
                         .fill(Neon.bg)
-                        .frame(width: 112, height: 112)
+                        .frame(width: 64, height: 64)
                         .overlay(RoundedRectangle(cornerRadius: 28).stroke(Neon.blue.opacity(0.65), lineWidth: 1))
                     Image(systemName: "mappin.and.ellipse")
-                        .font(.system(size: 48, weight: .medium))
+                        .font(.system(size: 30, weight: .medium))
                         .foregroundStyle(.white)
                 }
                 Text("位置情報の偽装")
-                    .font(.system(size: 31, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 HStack(spacing: 9) {
                     Image(systemName: isActive ? "location.fill" : "location.slash.fill")
@@ -104,16 +106,16 @@ struct ContentView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(isActive ? Neon.cyan : Color.orange)
                 }
-                .padding(.horizontal, 20).padding(.vertical, 11)
+                .padding(.horizontal, 14).padding(.vertical, 7)
                 .background(Color(red: 0.12, green: 0.15, blue: 0.21), in: Capsule())
                 .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 1))
             }
-            .padding(.top, 3).padding(.bottom, 8)
+            .padding(.top, 0).padding(.bottom, 0)
         }
     }
 
     private var mapCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Image(systemName: "mappin.and.ellipse")
                     .font(.system(size: 24, weight: .medium)).foregroundStyle(Neon.blue)
@@ -153,7 +155,7 @@ struct ContentView: View {
                     }
                 }
                 .mapStyle(.standard(elevation: .flat))
-                .frame(height: 360)
+                .frame(height: 230)
                 .clipShape(RoundedRectangle(cornerRadius: 24))
                 .onTapGesture { point in
                     guard let selected = proxy.convert(point, from: .local) else { return }
@@ -170,7 +172,7 @@ struct ContentView: View {
                     .lineLimit(1).minimumScaleFactor(0.75)
             }
         }
-        .padding(18)
+        .padding(11)
         .background(Neon.panel.opacity(0.62), in: RoundedRectangle(cornerRadius: 28))
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.30), lineWidth: 1))
     }
@@ -201,16 +203,16 @@ struct ContentView: View {
     }
 
     private var actionCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             Button { Task { await setLocation() } } label: {
                 HStack(spacing: 10) {
                     if isWorking { ProgressView().tint(.white) }
                     else { Image(systemName: "location.fill") }
                     Text(isWorking ? "設定中" : "位置情報を設定")
-                        .font(.system(size: 19, weight: .bold))
+                        .font(.system(size: 16, weight: .bold))
                 }
                 .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: 72)
+                .frame(maxWidth: .infinity, minHeight: 54)
                 .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 24))
                 .shadow(color: Neon.blue.opacity(0.32), radius: 16, y: 6)
             }
@@ -238,21 +240,45 @@ struct ContentView: View {
     }
 
     private var coordinatesCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            heading("02", "MANUAL COORDINATES", "数値を直接編集することもできます")
-            coordinateField("LATITUDE / 緯度", value: $latitude)
-            coordinateField("LONGITUDE / 経度", value: $longitude)
-            if coordinate == nil {
-                Label("緯度は -90〜90、経度は -180〜180 で入力してください。",
-                      systemImage: "exclamationmark.triangle.fill")
-                    .font(.footnote).foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 9) {
+            Button { withAnimation(.easeInOut(duration: 0.2)) { showManualCoordinates.toggle() } } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "slider.horizontal.3").foregroundStyle(Neon.cyan)
+                    Text("座標を手入力").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    Image(systemName: showManualCoordinates ? "chevron.up" : "chevron.down")
+                        .foregroundStyle(Neon.muted)
+                }
+            }.buttonStyle(.plain)
+            if showManualCoordinates {
+                coordinateField("LATITUDE / 緯度", value: $latitude)
+                coordinateField("LONGITUDE / 経度", value: $longitude)
+                if coordinate == nil {
+                    Label("緯度は -90〜90、経度は -180〜180 で入力してください。",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote).foregroundStyle(.orange)
+                }
             }
-        }.cardStyle()
+        }.padding(12)
+            .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
     }
 
     private var connectionCard: some View {
-        VStack(alignment: .leading, spacing: 13) {
-            heading("03", "CONNECTION", "開発用サービスへの接続設定")
+        VStack(alignment: .leading, spacing: 10) {
+            Button { withAnimation(.easeInOut(duration: 0.2)) { showConnectionSettings.toggle() } } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "gearshape").foregroundStyle(Neon.cyan)
+                    Text("接続設定").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    Text(pairingPath == nil ? "未設定" : "設定済み")
+                        .font(.system(size: 11, weight: .medium)).foregroundStyle(Neon.muted)
+                    Image(systemName: showConnectionSettings ? "chevron.up" : "chevron.down")
+                        .foregroundStyle(Neon.muted)
+                }
+            }.buttonStyle(.plain)
+            if showConnectionSettings {
+                heading("03", "CONNECTION", "開発用サービスへの接続設定")
             VStack(alignment: .leading, spacing: 7) {
                 fieldLabel("TUNNEL IP")
                 TextField("10.7.0.1", text: $deviceIP)
@@ -276,9 +302,12 @@ struct ContentView: View {
                     .background(Neon.cyan.opacity(0.1), in: Capsule())
                     .overlay(Capsule().stroke(Neon.cyan.opacity(0.35), lineWidth: 1))
             }
-            Text("ペアリングファイルは端末内のアプリ領域にコピーします。リポジトリやログには保存しません。")
-                .font(.footnote).foregroundStyle(Neon.muted)
-        }.cardStyle()
+                Text("ペアリングファイルは端末内のアプリ領域にコピーします。リポジトリやログには保存しません。")
+                    .font(.footnote).foregroundStyle(Neon.muted)
+            }
+        }.padding(12)
+            .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
     }
 
     private func heading(_ number: String, _ title: String, _ subtitle: String) -> some View {
