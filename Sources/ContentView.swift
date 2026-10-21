@@ -7,8 +7,8 @@ import ActivityKit
 private enum Neon {
     static let bg = Color(red: 0.018, green: 0.035, blue: 0.065)
     static let panel = Color(red: 0.045, green: 0.075, blue: 0.12)
-    static let cyan = Color(red: 0.30, green: 0.90, blue: 1.0)
-    static let blue = Color(red: 0.18, green: 0.48, blue: 1.0)
+    static let cyan = Color(red: 0.24, green: 0.66, blue: 0.76)
+    static let blue = Color(red: 0.12, green: 0.30, blue: 0.52)
     static let muted = Color(red: 0.62, green: 0.76, blue: 0.86)
     static let gradient = LinearGradient(colors: [cyan, blue], startPoint: .topLeading, endPoint: .bottomTrailing)
 }
@@ -152,14 +152,19 @@ struct ContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
-                    Button { selectedPage = "menu" } label: {
+                    Button {
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                            selectedPage = "menu"
+                        }
+                    } label: {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Neon.muted)
                             .frame(width: 42, height: 42)
-                            .background(.white.opacity(0.10), in: Circle())
-                            .overlay(Circle().stroke(.white.opacity(0.25), lineWidth: 1))
+                            .background(Neon.panel, in: RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.08), lineWidth: 1))
                     }
+                    .buttonStyle(SoftPressButtonStyle())
                     Spacer()
                 }
                 VStack(alignment: .leading, spacing: 6) {
@@ -215,7 +220,7 @@ struct ContentView: View {
                                 .foregroundStyle(Neon.bg).frame(maxWidth: .infinity, minHeight: 46)
                                 .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 13))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(SoftPressButtonStyle())
                         .disabled(pairHost.isBusy || pairHost.phase == .succeeded)
                         Button {
                             pairHost.resetToIdle()
@@ -313,14 +318,19 @@ struct ContentView: View {
     private var header: some View {
         VStack(spacing: 7) {
             HStack {
-                Button { selectedPage = "menu" } label: {
+                Button {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                        selectedPage = "menu"
+                    }
+                } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 40, height: 40)
-                        .background(.white.opacity(0.12), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.28), lineWidth: 1))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Neon.muted)
+                        .frame(width: 42, height: 42)
+                        .background(Neon.panel, in: RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.08), lineWidth: 1))
                 }
+                .buttonStyle(SoftPressButtonStyle())
                 Spacer()
                 Button { selectedPage = "pairing" } label: {
                     Image(systemName: "gearshape")
@@ -458,11 +468,12 @@ struct ContentView: View {
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: 54)
-                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 20))
+                .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 17))
+                .overlay(RoundedRectangle(cornerRadius: 17).stroke(.white.opacity(0.07), lineWidth: 1))
                 .scaleEffect(isWorking ? 0.985 : 1)
-                .animation(.spring(response: 0.25, dampingFraction: 0.62), value: isWorking)
+                .animation(.spring(response: 0.32, dampingFraction: 0.68), value: isWorking)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SoftPressButtonStyle())
             .disabled(isWorking || isActive || coordinate == nil || pairingPath == nil)
             .opacity(isWorking || isActive || coordinate == nil || pairingPath == nil ? 0.5 : 1)
 
@@ -666,5 +677,15 @@ private extension View {
         padding(14)
             .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 21))
             .overlay(RoundedRectangle(cornerRadius: 21).stroke(Neon.cyan.opacity(0.18), lineWidth: 1))
+    }
+}
+
+
+private struct SoftPressButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.965 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(.spring(response: 0.26, dampingFraction: 0.62), value: configuration.isPressed)
     }
 }
