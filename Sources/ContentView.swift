@@ -7,10 +7,10 @@ import ActivityKit
 private enum Neon {
     static let bg = Color(red: 0.025, green: 0.035, blue: 0.050)
     static let panel = Color(red: 0.055, green: 0.070, blue: 0.090)
-    static let cyan = Color(red: 0.30, green: 0.53, blue: 0.61)
-    static let blue = Color(red: 0.10, green: 0.20, blue: 0.31)
+    static let cyan = Color(red: 0.32, green: 0.68, blue: 0.98)
+    static let blue = Color(red: 0.15, green: 0.43, blue: 0.96)
     static let muted = Color(red: 0.59, green: 0.66, blue: 0.72)
-    static let gradient = LinearGradient(colors: [Color(red: 0.20, green: 0.36, blue: 0.42), Color(red: 0.10, green: 0.19, blue: 0.29)], startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let gradient = LinearGradient(colors: [Color(red: 0.13, green: 0.43, blue: 0.98), Color(red: 0.25, green: 0.68, blue: 1.00)], startPoint: .leading, endPoint: .trailing)
 }
 
 struct ContentView: View {
@@ -219,6 +219,7 @@ struct ContentView: View {
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(Neon.bg).frame(maxWidth: .infinity, minHeight: 46)
                                 .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 13))
+                                .shadow(color: Neon.blue.opacity(0.20), radius: 10, y: 3)
                         }
                         .buttonStyle(SoftPressButtonStyle())
                         .disabled(pairHost.isBusy || pairHost.phase == .succeeded)
@@ -239,8 +240,7 @@ struct ContentView: View {
                         .font(.system(size: 11)).foregroundStyle(Neon.muted.opacity(0.85))
                 }
                 .padding(15)
-                .background(Neon.panel, in: RoundedRectangle(cornerRadius: 20))
-                .overlay(RoundedRectangle(cornerRadius: 20).stroke(.white.opacity(0.08), lineWidth: 1))
+                .modifier(LiquidGlassSurface(cornerRadius: 20))
 
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 12) {
@@ -262,6 +262,7 @@ struct ContentView: View {
                             .foregroundStyle(Neon.bg)
                             .frame(maxWidth: .infinity, minHeight: 50)
                             .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 15))
+                            .shadow(color: Neon.blue.opacity(0.18), radius: 10, y: 3)
                     }.buttonStyle(.plain)
                     VStack(alignment: .leading, spacing: 7) {
                         fieldLabel("TUNNEL IP")
@@ -276,8 +277,7 @@ struct ContentView: View {
                         .font(.footnote).foregroundStyle(Neon.muted)
                 }
                 .padding(16)
-                .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
-                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
+                .modifier(LiquidGlassSurface(cornerRadius: 22))
                 if let errorMessage { errorCard(errorMessage) }
             }
             .padding(16)
@@ -309,8 +309,7 @@ struct ContentView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
-            .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
-            .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
+            .modifier(LiquidGlassSurface(cornerRadius: 22))
         }
         .buttonStyle(SoftPressButtonStyle())
     }
@@ -385,7 +384,8 @@ struct ContentView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 18)
                     .frame(height: 58)
-                    .background(Color(red: 0.10, green: 0.12, blue: 0.17), in: RoundedRectangle(cornerRadius: 20))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(.white.opacity(0.09), lineWidth: 1))
                     .submitLabel(.search)
                     .onSubmit { Task { await searchPlace() } }
                 Button { Task { await searchPlace() } } label: {
@@ -393,7 +393,8 @@ struct ContentView: View {
                         .font(.system(size: 21, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(width: 58, height: 58)
-                        .background(Color(red: 0.13, green: 0.16, blue: 0.22), in: RoundedRectangle(cornerRadius: 22))
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
+                        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.10), lineWidth: 1)
                 }
                 .buttonStyle(SoftPressButtonStyle())
                 .accessibilityLabel("場所を検索")
@@ -429,8 +430,7 @@ struct ContentView: View {
             }
         }
         .padding(11)
-        .background(Neon.panel, in: RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
+        .modifier(LiquidGlassSurface(cornerRadius: 22))
     }
 
     @MainActor
@@ -470,6 +470,7 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: 54)
                 .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 17))
+                .shadow(color: Neon.blue.opacity(0.22), radius: 14, y: 5)
                 .overlay(RoundedRectangle(cornerRadius: 17).stroke(.white.opacity(0.07), lineWidth: 1))
                 .scaleEffect(isWorking ? 0.985 : 1)
                 .animation(.spring(response: 0.32, dampingFraction: 0.68), value: isWorking)
@@ -518,8 +519,7 @@ struct ContentView: View {
                 }
             }
         }.padding(12)
-            .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.075), lineWidth: 1))
+            .modifier(LiquidGlassSurface(cornerRadius: 18))
     }
 
     private var connectionCard: some View {
@@ -564,8 +564,7 @@ struct ContentView: View {
                     .font(.footnote).foregroundStyle(Neon.muted)
             }
         }.padding(12)
-            .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.075), lineWidth: 1))
+            .modifier(LiquidGlassSurface(cornerRadius: 18))
     }
 
     private func heading(_ number: String, _ title: String, _ subtitle: String) -> some View {
@@ -676,8 +675,7 @@ struct ContentView: View {
 private extension View {
     func cardStyle() -> some View {
         padding(14)
-            .background(Neon.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 21))
-            .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white.opacity(0.075), lineWidth: 1))
+            .modifier(LiquidGlassSurface(cornerRadius: 21))
     }
 }
 
@@ -688,5 +686,26 @@ private struct SoftPressButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.965 : 1)
             .opacity(configuration.isPressed ? 0.88 : 1)
             .animation(.spring(response: 0.26, dampingFraction: 0.62), value: configuration.isPressed)
+    }
+}
+
+
+private struct LiquidGlassSurface: ViewModifier {
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        content
+            .background {
+                if #available(iOS 26.0, *) {
+                    shape.fill(.clear)
+                        .glassEffect(.regular, in: shape)
+                } else {
+                    shape.fill(Neon.panel.opacity(0.96))
+                }
+            }
+            .overlay {
+                shape.stroke(.white.opacity(0.11), lineWidth: 1)
+            }
     }
 }
