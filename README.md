@@ -1,34 +1,35 @@
 # iOS Location Simulation Lab
 
-iOS の位置情報シミュレーションを、SwiftUI と GitHub Actions で検証するための実験用リポジトリです。
+iOS の位置情報シミュレーションを SwiftUI と GitHub Actions で検証する実験用リポジトリです。
 
-## 現在の状態
+## ビルド成果物
 
-- [x] GitHub Actions で iOS アプリをビルドする土台
-- [x] 座標入力 UI の試作
-- [ ] Shift の接続・セッション管理を切り出す
-- [ ] `idevice` FFI のバイナリ・アーキテクチャ・ライセンスを確認する
-- [ ] 独自ビルドを LiveContainer で実機検証する
+GitHub Actions の **Build versioned IPA** を手動実行し、バージョン番号（例: `1.0.1`）を指定してください。
 
-**重要:** 現在の初期版は UI とビルド経路の検証用です。座標入力欄があっても、OS の位置情報を変更するエンジンはまだ接続されていません。動作済みとは扱いません。
+- IPAファイル名: `LocationLab-v1.0.1.ipa` のようにバージョン別になります。
+- GitHub Actions の Artifacts は、GitHub側の仕様でダウンロード時にZIPコンテナになります。
+- **ZIPに包まれていないIPA単体**が必要な場合は、workflow_dispatchの `publish_release` を有効にしてください。GitHub ReleaseのAssetsに `.ipa` ファイルそのものが添付されます。
+- `v1.0.2` などのタグを push しても、そのバージョンのIPAをRelease assetとして公開するワークフローが実行されます。
+- このリポジトリがPrivateの場合、Release assetの取得にはGitHubでの認証が必要です。
 
-## 背景
+## 現在の実装状態
 
-[ N3moStudio/Shift ](https://github.com/N3moStudio/Shift) の実装を調査対象にします。Shift のソースでは、位置情報シミュレーション用の API と、接続・セッション管理を組み合わせています。Shift が LiveContainer 内で動き、他アプリにも反映されたという実機報告はありますが、独自アプリへの移植が成功することを保証するものではありません。
+- [x] GitHub Actions上でiOSアプリをビルドする基盤
+- [x] 座標入力画面
+- [x] バージョン別IPAファイル名とRelease assetの出力設定
+- [ ] Shiftのネイティブ `idevice` ライブラリをアプリへリンク
+- [ ] 接続・セッション管理と位置情報シミュレーションAPIの統合
+- [ ] 独自ビルドをLiveContainerで実機検証
 
-## ビルド
+**注意:** 現時点で座標入力画面は位置情報エンジンに接続されていません。Shiftの依存ライブラリをCIで取得するステップはありますが、それだけではアプリにリンクされたことにも、位置情報が変更できることにもなりません。動作確認済みとは扱いません。
 
-GitHub Actions の **Build unsigned IPA** を手動実行するか、main ブランチに push してください。成功すると unsigned IPA がアーティファクトとして保存されます。
+## テスト方針
 
-- Mac は不要です。ビルドは GitHub-hosted macOS runner で行います。
-- 署名なし IPA が LiveContainer で動作するかは、実機と構成に依存します。
-- この workflow の成功は、位置情報シミュレーション機能の動作確認を意味しません。
+- 自分の端末または許可されたテスト環境でのみ検証してください。
+- ペアリング情報などの秘密情報をログ、スクリーンショット、リポジトリに含めないでください。
+- ビルド成功、API呼び出し成功、他アプリへの位置情報反映は、それぞれ別に検証してください。
 
-## 安全な検証方針
+## 参考
 
-- 自分の端末・許可されたテスト環境でのみ検証してください。
-- ペアリング情報や秘密情報をログ、スクリーンショット、リポジトリに含めないでください。
-- アプリやサービスの利用規約に反する用途には使用しないでください。
-- 実測結果とソースからの推定を分けて記録してください。
-
-詳しくは [docs/TESTING.md](docs/TESTING.md) と [docs/STATUS.md](docs/STATUS.md) を参照してください。
+- [N3moStudio/Shift](https://github.com/N3moStudio/Shift)
+- [GitHub Actions workflow](.github/workflows/build.yml)
