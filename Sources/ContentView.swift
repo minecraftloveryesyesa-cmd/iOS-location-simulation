@@ -30,6 +30,7 @@ struct ContentView: View {
     @State private var searchQuery = ""
     @State private var showManualCoordinates = false
     @State private var showConnectionSettings = false
+    @State private var showingPairingDeleteConfirmation = false
     @State private var selectedPage = "menu"
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
@@ -138,6 +139,8 @@ struct ContentView: View {
                 mapCard
                 actionCard
                 coordinatesCard
+                connectionDiagnosticsCard
+                recoveryCard
                 if let errorMessage { errorCard(errorMessage) }
                 Text("LOCATION LAB  •  DEVELOPMENT INTERFACE")
                     .font(.system(size: 9, weight: .medium, design: .monospaced))
@@ -145,6 +148,12 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity).padding(.top, 4)
             }
             .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 14)
+        }
+        .confirmationDialog("ペアリング情報を削除しますか？", isPresented: $showingPairingDeleteConfirmation, titleVisibility: .visible) {
+            Button("ペアリング情報を削除", role: .destructive) { deletePairingFile() }
+            Button("キャンセル", role: .cancel) { }
+        } message: {
+            Text("アプリ内に保存したペアリングファイルを削除します。削除後は再インポートが必要です。")
         }
     }
 
@@ -490,6 +499,137 @@ struct ContentView: View {
         }
     }
 
+    private var connectionDiagnosticsCard: some View {
+        VStack(alignment: .leading, spacing: 13) {
+            HStack(spacing: 10) {
+                Image(systemName: "waveform.path.ecg").foregroundStyle(Neon.cyan)
+                Text("接続診断").font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                Spacer()
+                Text("LOCAL CHECK").font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Neon.muted)
+            }
+            diagnosticRow("ペアリングファイル", value: pairingPath == nil ? "未設定" : (FileManager.default.fileExists(atPath: pairingPath!) ? "アプリ内に存在" : "パス上に見つからない"),
+                          good: pairingPath != nil && FileManager.default.fileExists(atPath: pairingPath!))
+            diagnosticRow("Tunnel IPv4", value: isValidIPv4Address(deviceIP) ? deviceIP : "入力値を確認",
+                          good: isValidIPv4Address(deviceIP))
+            diagnosticRow("座標入力", value: coordinate == nil ? "範囲外または未入力" : "緯度・経度の範囲内",
+                          good: coordinate != nil)
+            diagnosticRow("アプリ内ステータス", value: isWorking ? "処理中" : (isActive ? "設定API成功（端末側は未検証）" : status),
+                          good: !isWorking && (isActive || status == "未接続" || status.contains("成功")))
+            Text("ここで確認するのはアプリ内のファイル・入力・処理状態です。端末への接続や他アプリへの反映を、この診断だけで保証するものではありません。")
+                .font(.caption).foregroundStyle(Neon.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                refreshConnectionState()
+            } label: {
+                Label("状態を再確認", systemImage: "arrow.clockwise")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Neon.cyan)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Neon.cyan.opacity(0.07), in: RoundedRectangle(cornerRadius: 13))
+                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(.white.opacity(0.09), lineWidth: 1))
+            }
+            .buttonStyle(SoftPressButtonStyle())
+            .disabled(isWorking)
+        }
+        .padding(14)
+        .modifier(LiquidGlassSurface(cornerRadius: 20))
+    }
+
+    private var recoveryCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("復旧・状態管理", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
+                .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+            Text("接続に失敗した場合は、設定を確認して再試行できます。ペアリングファイルの削除はシミュレーション解除後に行ってください。")
+                .font(.caption).foregroundStyle(Neon.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                Task { await retryLocationSetup() }
+            } label: {
+                Label(isWorking ? "処理中…" : "現在の座標で接続を再試行", systemImage: "arrow.clockwise.circle")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 46)
+                    .background(Neon.gradient, in: RoundedRectangle(cornerRadius: 13))
+            }
+            .buttonStyle(SoftPressButtonStyle())
+            .disabled(isWorking || isActive || coordinate == nil || pairingPath == nil || !isValidIPv4Address(deviceIP))
+            Button(role: .destructive) {
+                showingPairingDeleteConfirmation = true
+            } label: {
+                Label("ペアリング情報を削除", systemImage: "trash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isActive ? Neon.muted : Color.orange)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Color.orange.opacity(0.06), in: RoundedRectangle(cornerRadius: 13))
+                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.orange.opacity(0.18), lineWidth: 1))
+            }
+            .buttonStyle(SoftPressButtonStyle())
+            .disabled(isWorking || isActive || pairingPath == nil)
+            if isActive {
+                Text("先に「シミュレーションを解除」を実行してください。")
+                    .font(.caption).foregroundStyle(.orange)
+            }
+        }
+        .padding(14)
+        .modifier(LiquidGlassSurface(cornerRadius: 20))
+    }
+
+    private func diagnosticRow(_ title: String, value: String, good: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title).font(.system(size: 12, weight: .medium)).foregroundStyle(Neon.muted)
+            Spacer(minLength: 8)
+            Text(value).font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(good ? Neon.cyan : Color.orange)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func isValidIPv4Address(_ value: String) -> Bool {
+        let parts = value.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 4 else { return false }
+        return parts.allSatisfy { part in
+            guard !part.isEmpty, let number = Int(part), (0...255).contains(number) else { return false }
+            return String(number) == part || (part.first == "0" && part.allSatisfy(\.isNumber))
+        }
+    }
+
+    private func refreshConnectionState() {
+        pairingStore.refresh()
+        if pairingStore.hasPairingFile {
+            pairingPath = pairingStore.pairingPath
+            pairingName = PairingStore.fileName
+        } else {
+            pairingPath = nil
+            pairingName = "未選択"
+        }
+        status = "アプリ内状態を再確認しました（端末側の反映は未検証）"
+    }
+
+    private func deletePairingFile() {
+        guard !isActive else {
+            errorMessage = "ペアリング情報を削除する前に、シミュレーションを解除してください。"
+            return
+        }
+        do {
+            try pairingStore.removePairing()
+            pairingPath = nil
+            pairingName = "未選択"
+            status = "ペアリング情報を削除しました"
+            errorMessage = nil
+        } catch {
+            errorMessage = "ペアリング情報を削除できませんでした: \\(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func retryLocationSetup() async {
+        guard !isActive else { return }
+        await setLocation()
+    }
+
     private var coordinatesCard: some View {
         VStack(alignment: .leading, spacing: 9) {
             Button { withAnimation(.easeInOut(duration: 0.2)) { showManualCoordinates.toggle() } } label: {
@@ -636,7 +776,8 @@ struct ContentView: View {
             try await LocationEngine.set(latitude: coordinate.latitude, longitude: coordinate.longitude,
                 pairingPath: pairingPath, deviceIP: deviceIP.trimmingCharacters(in: .whitespacesAndNewlines))
             isActive = true
-            status = "座標設定APIは成功"
+            status = "座標設定APIは成功（端末側の反映は未検証）"
+            PairingActivityManager.update(status: "位置情報設定API成功", detail: String(format: "%.5f, %.5f", coordinate.latitude, coordinate.longitude))
         } catch {
             status = "設定失敗"
             errorMessage = error.localizedDescription
@@ -653,7 +794,8 @@ struct ContentView: View {
             try await LocationEngine.clear(pairingPath: pairingPath,
                 deviceIP: deviceIP.trimmingCharacters(in: .whitespacesAndNewlines))
             isActive = false
-            status = "解除APIは成功"
+            status = "解除APIは成功（端末側の解除状態は未検証）"
+            PairingActivityManager.update(status: "シミュレーション解除API成功", detail: "端末側の解除状態は未検証")
         } catch {
             status = "解除失敗"
             errorMessage = error.localizedDescription
