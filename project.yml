@@ -17,9 +17,21 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         IPHONEOS_DEPLOYMENT_TARGET: "18.0"
-        MARKETING_VERSION: "1.0.1"
+        MARKETING_VERSION: "1.0.2"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Location Lab
+        SWIFT_INCLUDE_PATHS:
+          - "$(PROJECT_DIR)/Vendor/idevice"
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/Vendor/idevice"
+        LIBRARY_SEARCH_PATHS:
+          - "$(inherited)"
+          - "$(PROJECT_DIR)/Vendor/idevice"
+        OTHER_LDFLAGS:
+          - "$(inherited)"
+          - "-lidevice_ffi"
+          - "-lc++"
+          - "-lz"
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
