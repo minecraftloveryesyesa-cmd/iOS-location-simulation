@@ -11,7 +11,7 @@ on:
       publish_release:
         description: "GitHub Release に .ipa 単体を添付する"
         required: true
-        default: false
+        default: true
         type: boolean
   push:
     tags:
