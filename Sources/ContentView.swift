@@ -161,8 +161,7 @@ struct ContentView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Neon.muted)
                             .frame(width: 42, height: 42)
-                            .background(Neon.panel, in: RoundedRectangle(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.08), lineWidth: 1))
+                            .modifier(LiquidGlassSurface(cornerRadius: 14))
                     }
                     .buttonStyle(SoftPressButtonStyle())
                     Spacer()
@@ -331,16 +330,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(SoftPressButtonStyle())
                 Spacer()
-                Button { selectedPage = "pairing" } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Neon.muted)
-                        .frame(width: 44, height: 44)
-                        .background(Neon.panel, in: RoundedRectangle(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.08), lineWidth: 1))
-                }
-                .buttonStyle(SoftPressButtonStyle())
-                .accessibilityLabel("接続設定")
+
             }
             VStack(spacing: 7) {
                 ZStack {
