@@ -3,6 +3,7 @@ import MapKit
 import CoreLocation
 import UniformTypeIdentifiers
 import ActivityKit
+import UIKit
 
 private enum Neon {
     static let bg = Color(red: 0.025, green: 0.035, blue: 0.050)
@@ -21,6 +22,9 @@ struct ContentView: View {
     @State private var pairingName = "未選択"
     @StateObject private var pairingStore = PairingStore()
     @StateObject private var pairHost = PairOnDeviceService()
+    @StateObject private var consoleLog = ConsoleLogStore.shared
+    @State private var consoleSearch = ""
+    @State private var consoleLevelFilter = "すべて"
     @State private var showingImporter = false
     @State private var isPairingActivityVisible = false
     @State private var isWorking = false
@@ -88,17 +92,22 @@ struct ContentView: View {
         .onChange(of: pairHost.phase) { _, phase in
             switch phase {
             case .advertising:
+                consoleLog.log("ペアリング待機を開始")
                 PairingActivityManager.update(status: "ペアリング待機", detail: "iOSの設定からペアリングを開始")
             case .deviceConnected:
+                consoleLog.log("ペアリング相手が接続")
                 PairingActivityManager.update(status: "接続済み", detail: "コードを生成しています")
             case .awaitingPIN(let pin):
+                consoleLog.log("ペアリングコードを生成（値は安全のため記録しません）")
                 PairingActivityManager.update(status: "コード入力", detail: pin)
             case .succeeded:
+                consoleLog.log("ペアリング成功")
                 pairingStore.refresh()
                 pairingPath = pairingStore.pairingPath
                 pairingName = PairingStore.fileName
                 PairingActivityManager.update(status: "ペアリング完了", detail: "情報を保存しました")
             case .failed(let message):
+                consoleLog.log("ペアリング失敗: \(message)", level: .error)
                 PairingActivityManager.update(status: "ペアリング失敗", detail: String(message.prefix(80)))
             case .idle:
                 break
@@ -126,9 +135,163 @@ struct ContentView: View {
                         selectedPage = "location"
                     }
                 }
+
+                consoleCard
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
+        }
+    }
+
+    private var consoleCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "terminal.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Neon.cyan)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("コンソール")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("\(consoleLog.entries.count) 件のログ")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(Neon.muted)
+                }
+                Spacer()
+                Button {
+                    let text = visibleConsoleEntries.map(\.formatted).joined(separator: "\n")
+                    guard !text.isEmpty else { return }
+                    UIPasteboard.general.string = text
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Neon.cyan)
+                        .frame(width: 38, height: 38)
+                        .background(Neon.cyan.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(SoftPressButtonStyle())
+                .accessibilityLabel("表示中のログをコピー")
+                .disabled(visibleConsoleEntries.isEmpty)
+
+                Button {
+                    consoleLog.clear()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.orange)
+                        .frame(width: 38, height: 38)
+                        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(SoftPressButtonStyle())
+                .accessibilityLabel("ログを消去")
+                .disabled(consoleLog.entries.isEmpty)
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundStyle(Neon.muted)
+                TextField("ログを検索", text: $consoleSearch)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                if !consoleSearch.isEmpty {
+                    Button {
+                        consoleSearch = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(Neon.muted)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("検索をクリア")
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 42)
+            .background(Neon.bg.opacity(0.9), in: RoundedRectangle(cornerRadius: 13))
+            .overlay(RoundedRectangle(cornerRadius: 13).stroke(.white.opacity(0.07), lineWidth: 1))
+
+            Picker("ログレベル", selection: $consoleLevelFilter) {
+                Text("すべて").tag("すべて")
+                Text("情報").tag("INFO")
+                Text("警告").tag("WARN")
+                Text("エラー").tag("ERROR")
+            }
+            .pickerStyle(.segmented)
+            .tint(Neon.cyan)
+
+            if visibleConsoleEntries.isEmpty {
+                VStack(spacing: 7) {
+                    Image(systemName: "text.alignleft")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Neon.muted)
+                    Text(consoleLog.entries.isEmpty ? "ログはまだありません" : "一致するログがありません")
+                        .font(.caption)
+                        .foregroundStyle(Neon.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(visibleConsoleEntries.suffix(40)) { entry in
+                        HStack(alignment: .top, spacing: 8) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(consoleLevelColor(entry.level))
+                                .frame(width: 3)
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 6) {
+                                    Text(entry.timestamp.formatted(date: .omitted, time: .standard))
+                                        .foregroundStyle(Neon.muted)
+                                    Text(entry.level.rawValue)
+                                        .foregroundStyle(consoleLevelColor(entry.level))
+                                        .fontWeight(.bold)
+                                }
+                                .font(.system(size: 10, design: .monospaced))
+                                Text(entry.message)
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.92))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .textSelection(.enabled)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 9)
+                        .padding(.horizontal, 10)
+                        .background(Neon.bg.opacity(0.68), in: RoundedRectangle(cornerRadius: 10))
+                        .padding(.bottom, 6)
+                    }
+                }
+                if visibleConsoleEntries.count > 40 {
+                    Text("最新40件を表示中。コピーではフィルターに一致する全件をコピーします。")
+                        .font(.caption2)
+                        .foregroundStyle(Neon.muted)
+                }
+            }
+
+            Text("Location Lab 内部のイベントログです。iOS 全体や他アプリのシステムログは取得しません。PIN・ペアリング内容はログに記録しません。")
+                .font(.caption2)
+                .foregroundStyle(Neon.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .modifier(LiquidGlassSurface(cornerRadius: 22))
+    }
+
+    private var visibleConsoleEntries: [ConsoleLogEntry] {
+        consoleLog.entries.filter { entry in
+            let matchesLevel = consoleLevelFilter == "すべて" || entry.level.rawValue == consoleLevelFilter
+            let query = consoleSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+            let matchesSearch = query.isEmpty ||
+                entry.message.localizedCaseInsensitiveContains(query) ||
+                entry.level.rawValue.localizedCaseInsensitiveContains(query)
+            return matchesLevel && matchesSearch
+        }
+    }
+
+    private func consoleLevelColor(_ level: ConsoleLogLevel) -> Color {
+        switch level {
+        case .info: return Neon.cyan
+        case .warning: return .orange
+        case .error: return Color(red: 1, green: 0.35, blue: 0.38)
         }
     }
 
@@ -454,7 +617,9 @@ struct ContentView: View {
                 span: MKCoordinateSpan(latitudeDelta: 0.025, longitudeDelta: 0.025)
             ))
             errorMessage = nil
+            consoleLog.log("場所検索成功: \(query)")
         } catch {
+            consoleLog.log("場所検索失敗: \(error.localizedDescription)", level: .warning)
             errorMessage = "場所を検索できませんでした: \\(error.localizedDescription)"
         }
     }
@@ -761,7 +926,9 @@ struct ContentView: View {
             pairingPath = pairingStore.hasPairingFile ? pairingStore.pairingPath : nil
             pairingName = pairingStore.hasPairingFile ? PairingStore.fileName : "未選択"
             errorMessage = nil
+            consoleLog.log("ペアリングファイルを取り込みました")
         } catch {
+            consoleLog.log("ペアリングファイルの取り込み失敗: \(error.localizedDescription)", level: .error)
             errorMessage = "ペアリングファイルを取り込めませんでした: \(error.localizedDescription)"
         }
     }
@@ -777,10 +944,12 @@ struct ContentView: View {
                 pairingPath: pairingPath, deviceIP: deviceIP.trimmingCharacters(in: .whitespacesAndNewlines))
             isActive = true
             status = "座標設定APIは成功（端末側の反映は未検証）"
+            consoleLog.log(String(format: "位置情報設定 API 成功: %.6f, %.6f（端末側の反映は未検証）", coordinate.latitude, coordinate.longitude))
             PairingActivityManager.update(status: "位置情報設定API成功", detail: String(format: "%.5f, %.5f", coordinate.latitude, coordinate.longitude))
         } catch {
             status = "設定失敗"
             errorMessage = error.localizedDescription
+            consoleLog.log("位置情報設定 API 失敗: \(error.localizedDescription)", level: .error)
             PairingActivityManager.update(status: "位置情報設定失敗", detail: String(error.localizedDescription.prefix(80)))
         }
     }
@@ -796,10 +965,12 @@ struct ContentView: View {
                 deviceIP: deviceIP.trimmingCharacters(in: .whitespacesAndNewlines))
             isActive = false
             status = "解除APIは成功（端末側の解除状態は未検証）"
+            consoleLog.log("位置情報解除 API 成功（端末側の解除状態は未検証）")
             PairingActivityManager.update(status: "シミュレーション解除API成功", detail: "端末側の解除状態は未検証")
         } catch {
             status = "解除失敗"
             errorMessage = error.localizedDescription
+            consoleLog.log("位置情報解除 API 失敗: \(error.localizedDescription)", level: .error)
             PairingActivityManager.update(status: "シミュレーション解除失敗", detail: String(error.localizedDescription.prefix(80)))
         }
     }
