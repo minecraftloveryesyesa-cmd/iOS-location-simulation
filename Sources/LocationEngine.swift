@@ -26,6 +26,8 @@ enum LocationEngine {
     private static var handshake: OpaquePointer?
     private static var remoteServer: OpaquePointer?
     private static var simulation: OpaquePointer?
+    private static var activePairingPath: String?
+    private static var activeDeviceIP: String?
 
     static func set(latitude: Double, longitude: Double, pairingPath: String, deviceIP: String) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -68,13 +70,18 @@ enum LocationEngine {
     }
 
     private static func connectIfNeeded(pairingPath: String, deviceIP: String) throws {
-        if simulation != nil { return }
-
         var address = sockaddr_in()
         address.sin_family = sa_family_t(AF_INET)
         address.sin_port = in_port_t(49152).bigEndian
         guard deviceIP.withCString({ inet_pton(AF_INET, $0, &address.sin_addr) }) == 1 else {
             throw LocationEngineError.invalidIP
+        }
+
+        if simulation != nil, activePairingPath == pairingPath, activeDeviceIP == deviceIP {
+            return
+        }
+        if simulation != nil || adapter != nil || handshake != nil || remoteServer != nil {
+            cleanup()
         }
 
         var pairing: OpaquePointer?
@@ -118,6 +125,8 @@ enum LocationEngine {
         }
         // Shift と同じく、simulation 作成後は remoteServer の所有権を移す。
         remoteServer = nil
+        activePairingPath = pairingPath
+        activeDeviceIP = deviceIP
     }
 
     private static func cleanup() {
@@ -137,5 +146,7 @@ enum LocationEngine {
             adapter_free(adapter)
             self.adapter = nil
         }
+        activePairingPath = nil
+        activeDeviceIP = nil
     }
 }
