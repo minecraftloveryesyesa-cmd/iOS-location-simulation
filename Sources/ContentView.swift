@@ -308,8 +308,11 @@ struct ContentView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .modifier(LiquidGlassSurface(cornerRadius: 22))
         }
+        .frame(maxWidth: .infinity, minHeight: 116)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .buttonStyle(SoftPressButtonStyle())
     }
 
