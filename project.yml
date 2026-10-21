@@ -8,6 +8,9 @@ targets:
   LocationSimulationLab:
     type: application
     platform: iOS
+    dependencies:
+      - target: LocationLabLiveActivity
+        embed: true
     sources:
       - path: Sources
       - path: Shared/PairingActivityAttributes.swift
