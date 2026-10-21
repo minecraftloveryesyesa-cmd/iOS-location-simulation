@@ -10,6 +10,7 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+      - path: Shared/PairingActivityAttributes.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.minecraftloveryesyesa.location-simulation-lab
@@ -21,6 +22,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Location Lab
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
         SWIFT_INCLUDE_PATHS:
           - "$(PROJECT_DIR)/Vendor/idevice"
         HEADER_SEARCH_PATHS:
@@ -33,5 +35,24 @@ targets:
           - "-lidevice_ffi"
           - "-lc++"
           - "-lz"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
+  LocationLabLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: LiveActivityExtension
+      - path: Shared/PairingActivityAttributes.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.minecraftloveryesyesa.location-simulation-lab.liveactivity
+        PRODUCT_NAME: LocationLabLiveActivity
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        SKIP_INSTALL: YES
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
