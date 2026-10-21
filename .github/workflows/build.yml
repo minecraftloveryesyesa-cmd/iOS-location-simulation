@@ -12,13 +12,29 @@ jobs:
   build:
     runs-on: macos-26
     steps:
-      - name: Checkout
+      - name: Checkout this repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode
+      - name: Checkout Shift dependency
+        uses: actions/checkout@v4
+        with:
+          repository: N3moStudio/Shift
+          ref: main
+          path: Shift-source
+          persist-credentials: false
+
+      - name: Stage native idevice dependency
         run: |
-          xcodebuild -version
+          mkdir -p Vendor
+          cp -R Shift-source/Vendor/idevice Vendor/idevice
+          test -f Vendor/idevice/idevice.h
+          test -f Vendor/idevice/module.modulemap
+          test -f Vendor/idevice/libidevice_ffi.a
+          file Vendor/idevice/libidevice_ffi.a
           xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Select Xcode
+        run: xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen
