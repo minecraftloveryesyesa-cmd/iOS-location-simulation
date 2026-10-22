@@ -36,6 +36,7 @@ struct ContentView: View {
     @State private var showConnectionSettings = false
     @State private var showingPairingDeleteConfirmation = false
     @State private var selectedPage = "menu"
+    @State private var backSwipeOffset: CGFloat = 0
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
                            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08))
@@ -62,16 +63,37 @@ struct ContentView: View {
                 }
                 .animation(.spring(response: 0.38, dampingFraction: 0.86), value: selectedPage)
                 // iOS-style edge swipe: start near the left edge and drag right to go back.
+                .offset(x: selectedPage == "menu" ? 0 : backSwipeOffset)
                 .contentShape(Rectangle())
                 .simultaneousGesture(
-                    DragGesture(minimumDistance: 18, coordinateSpace: .local)
+                    DragGesture(minimumDistance: 8, coordinateSpace: .local)
+                        .onChanged { value in
+                            guard selectedPage != "menu",
+                                  value.startLocation.x < 34,
+                                  value.translation.width > 0,
+                                  abs(value.translation.height) < 90 else { return }
+                            // Follow the finger instead of waiting until the gesture ends.
+                            backSwipeOffset = min(value.translation.width, 360)
+                        }
                         .onEnded { value in
-                            guard value.startLocation.x < 34,
-                                  value.translation.width > 90,
-                                  abs(value.translation.height) < 90,
-                                  selectedPage != "menu" else { return }
-                            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                                selectedPage = "menu"
+                            guard selectedPage != "menu",
+                                  value.startLocation.x < 34,
+                                  abs(value.translation.height) < 90 else {
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                    backSwipeOffset = 0
+                                }
+                                return
+                            }
+
+                            if value.translation.width > 110 {
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                                    selectedPage = "menu"
+                                }
+                                backSwipeOffset = 0
+                            } else {
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                    backSwipeOffset = 0
+                                }
                             }
                         }
                 )
