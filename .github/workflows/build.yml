@@ -73,6 +73,15 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Normalize app icon dimensions
+        shell: bash
+        run: |
+          ICON="Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+          if [[ -f "$ICON" ]]; then
+            sips -z 1024 1024 "$ICON" >/dev/null
+            sips -g pixelWidth -g pixelHeight "$ICON"
+          fi
+
       - name: Generate Xcode project
         run: xcodegen generate
 
