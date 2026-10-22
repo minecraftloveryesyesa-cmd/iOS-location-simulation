@@ -75,6 +75,15 @@ struct ContentView: View {
                             }
                         }
                 )
+                .overlay(alignment: .top) {
+                    if let errorMessage {
+                        errorPopup(errorMessage)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 10)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .zIndex(100)
+                    }
+                }
             }
             .preferredColorScheme(.dark)
             .toolbar(.hidden, for: .navigationBar)
@@ -304,7 +313,6 @@ struct ContentView: View {
                 coordinatesCard
                 connectionDiagnosticsCard
                 recoveryCard
-                if let errorMessage { errorCard(errorMessage) }
                 Text("LOCATION LAB  •  DEVELOPMENT INTERFACE")
                     .font(.system(size: 9, weight: .medium, design: .monospaced))
                     .tracking(1.4).foregroundStyle(Neon.muted.opacity(0.65))
@@ -904,15 +912,61 @@ struct ContentView: View {
         }
     }
 
-    private func errorCard(_ message: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("ERROR", systemImage: "exclamationmark.triangle.fill")
-                .font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(.red)
-            Text(message).font(.footnote).foregroundStyle(.white)
-            Button("エラーを閉じる") { errorMessage = nil }.foregroundStyle(Neon.cyan)
-        }.padding(15).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red.opacity(0.3), lineWidth: 1))
+    private func errorPopup(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 13))
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("エラーが発生しました")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(message)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                    errorMessage = nil
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.95))
+                    .frame(width: 30, height: 30)
+                    .background(.white.opacity(0.14), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("エラーを閉じる")
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [
+                        Color(red: 0.92, green: 0.12, blue: 0.20),
+                        Color(red: 0.62, green: 0.04, blue: 0.12),
+                        Color(red: 0.28, green: 0.025, blue: 0.07)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(.white.opacity(0.24), lineWidth: 1)
+        }
+        .shadow(color: .red.opacity(0.28), radius: 22, x: 0, y: 10)
+        .accessibilityElement(children: .contain)
     }
 
     private func importPairingFile(_ result: Result<[URL], Error>) {
