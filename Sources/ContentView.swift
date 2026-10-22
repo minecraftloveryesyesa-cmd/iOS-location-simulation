@@ -479,7 +479,6 @@ struct ContentView: View {
                 }
                 .padding(16)
                 .modifier(LiquidGlassSurface(cornerRadius: 22))
-                if let errorMessage { errorCard(errorMessage) }
             }
             .padding(16)
         }
