@@ -37,6 +37,8 @@ struct ContentView: View {
     @State private var showingPairingDeleteConfirmation = false
     @State private var selectedPage = "menu"
     @State private var backSwipeOffset: CGFloat = 0
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var mapRefreshID = UUID()
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
                            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08))
@@ -118,6 +120,12 @@ struct ContentView: View {
             if pairingStore.hasPairingFile {
                 pairingPath = pairingStore.pairingPath
                 pairingName = PairingStore.fileName
+            }
+            refreshMapData()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                refreshMapData()
             }
         }
         .onChange(of: pairHost.phase) { _, phase in
@@ -604,6 +612,7 @@ struct ContentView: View {
                         }
                     }
                 }
+                .id(mapRefreshID)
                 .mapStyle(.standard(elevation: .flat))
                 .frame(height: 230)
                 .clipShape(RoundedRectangle(cornerRadius: 24))
@@ -624,6 +633,12 @@ struct ContentView: View {
         }
         .padding(11)
         .modifier(LiquidGlassSurface(cornerRadius: 22))
+    }
+
+    private func refreshMapData() {
+        // Recreate the MapKit view when the app opens or returns to the foreground.
+        // MapKit still controls its own network/cache policy for map tiles.
+        mapRefreshID = UUID()
     }
 
     @MainActor
